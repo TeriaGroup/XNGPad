@@ -1,0 +1,16 @@
+bin/
+obj/
+.codegraph/
+XNGPad_exe/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Pp]ublish/
+artifacts/
+*.DotSettings.user
+TestResults/
+*.log
+.idea/
+*.nupkg

@@ -1,0 +1,31 @@
+<Window x:Class="XNGPad.App.Views.TokenWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="440"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource FgBrush}">
+    <StackPanel Margin="20">
+        <TextBlock x:Name="HintText" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,12"/>
+        <PasswordBox x:Name="SecretBox"
+                     FontSize="14"
+                     Padding="10,8"
+                     Background="{StaticResource InputBrush}"
+                     Foreground="{StaticResource FgBrush}"
+                     BorderBrush="#FF2E3038"
+                     BorderThickness="1"
+                     Margin="0,0,0,16"/>
+        <Button x:Name="SiteButton" Style="{StaticResource BarButton}" Click="Site_Click"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="CancelButton" Style="{StaticResource BarButton}" Margin="0" Click="Cancel_Click"/>
+            <Button x:Name="SaveButton" Grid.Column="2" Style="{StaticResource AccentButton}" Margin="0" Click="Save_Click"/>
+        </Grid>
+    </StackPanel>
+</Window>

@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>XNGPad</value></data>
+  <data name="LangRu" xml:space="preserve"><value>RU</value></data>
+  <data name="LangEn" xml:space="preserve"><value>EN</value></data>
+  <data name="Docker" xml:space="preserve"><value>Docker</value></data>
+  <data name="Searxng" xml:space="preserve"><value>SearXNG</value></data>
+  <data name="OpenCode" xml:space="preserve"><value>OpenCode</value></data>
+  <data name="DockerMissing" xml:space="preserve"><value>missing</value></data>
+  <data name="DockerInstalledNotRunning" xml:space="preserve"><value>installed, not running</value></data>
+  <data name="DockerOk" xml:space="preserve"><value>ok</value></data>
+  <data name="SearxngOff" xml:space="preserve"><value>off</value></data>
+  <data name="SearxngPulling" xml:space="preserve"><value>downloading</value></data>
+  <data name="SearxngStarting" xml:space="preserve"><value>starting</value></data>
+  <data name="SearxngRunning" xml:space="preserve"><value>running {0}</value></data>
+  <data name="OpenCodeConfigMissing" xml:space="preserve"><value>config not found</value></data>
+  <data name="OpenCodeMcpMissing" xml:space="preserve"><value>MCP not set</value></data>
+  <data name="OpenCodeConnected" xml:space="preserve"><value>connected</value></data>
+  <data name="OpenCodeInvalidJson" xml:space="preserve"><value>config is invalid</value></data>
+  <data name="DownloadDocker" xml:space="preserve"><value>Download Docker</value></data>
+  <data name="DownloadDockerHint" xml:space="preserve"><value>Install Docker Desktop, then click “Check again”.</value></data>
+  <data name="StartDocker" xml:space="preserve"><value>Start Docker</value></data>
+  <data name="EnableSearxng" xml:space="preserve"><value>Enable SearXNG</value></data>
+  <data name="DisableSearxng" xml:space="preserve"><value>Disable SearXNG</value></data>
+  <data name="ConnectOpenCode" xml:space="preserve"><value>Connect to OpenCode</value></data>
+  <data name="DisconnectOpenCode" xml:space="preserve"><value>Disconnect OpenCode</value></data>
+  <data name="OpenSearxng" xml:space="preserve"><value>Open SearXNG</value></data>
+  <data name="ShowLog" xml:space="preserve"><value>Show log</value></data>
+  <data name="OpenOpenCodeFolder" xml:space="preserve"><value>Open OpenCode folder</value></data>
+  <data name="Install" xml:space="preserve"><value>Install</value></data>
+  <data name="InstallHint" xml:space="preserve"><value>Install Node, Docker, OpenCode, and MCP here. Docker will ask Windows for permission.</value></data>
+  <data name="InstallNode" xml:space="preserve"><value>Install Node.js</value></data>
+  <data name="InstallDockerApp" xml:space="preserve"><value>Install Docker</value></data>
+  <data name="InstallOpenCode" xml:space="preserve"><value>Install OpenCode</value></data>
+  <data name="InstallMcpTitle" xml:space="preserve"><value>OpenCode MCP</value></data>
+  <data name="StatusInstalled" xml:space="preserve"><value>installed</value></data>
+  <data name="StatusMissing" xml:space="preserve"><value>missing</value></data>
+  <data name="InstallNodeOk" xml:space="preserve"><value>Node.js is installed. If the status did not update, restart XNGPad.</value></data>
+  <data name="InstallDockerOk" xml:space="preserve"><value>The Docker installer started. Allow the Windows prompt and wait for the whale.</value></data>
+  <data name="InstallOpenCodeOk" xml:space="preserve"><value>OpenCode is installed. Restart OpenCode.</value></data>
+  <data name="BusyInstallingNode" xml:space="preserve"><value>Installing Node.js…</value></data>
+  <data name="BusyInstallingDocker" xml:space="preserve"><value>Installing Docker…</value></data>
+  <data name="BusyInstallingOpenCode" xml:space="preserve"><value>Installing OpenCode…</value></data>
+  <data name="BusyInstallingMcp" xml:space="preserve"><value>Writing MCP to config…</value></data>
+  <data name="NeedNodeFirst" xml:space="preserve"><value>Install Node.js first.</value></data>
+  <data name="AddMcp" xml:space="preserve"><value>Add</value></data>
+  <data name="RemoveMcp" xml:space="preserve"><value>Remove</value></data>
+  <data name="McpSearxng" xml:space="preserve"><value>SearXNG</value></data>
+  <data name="McpSequential" xml:space="preserve"><value>Sequential thinking</value></data>
+  <data name="McpMemory" xml:space="preserve"><value>Memory</value></data>
+  <data name="McpContext7" xml:space="preserve"><value>Context7</value></data>
+  <data name="McpFilesystem" xml:space="preserve"><value>Files (projects)</value></data>
+  <data name="McpSearxngHint" xml:space="preserve"><value>Searches the web through your local SearXNG.</value></data>
+  <data name="McpSequentialHint" xml:space="preserve"><value>Breaks a hard question into steps and thinks in order.</value></data>
+  <data name="McpMemoryHint" xml:space="preserve"><value>Remembers facts and brings them up in later chats.</value></data>
+  <data name="McpContext7Hint" xml:space="preserve"><value>Fetches up-to-date library docs.</value></data>
+  <data name="McpFilesystemHint" xml:space="preserve"><value>Reads files in the projects folder on your Desktop.</value></data>
+  <data name="McpGit" xml:space="preserve"><value>Git</value></data>
+  <data name="McpGitHint" xml:space="preserve"><value>Looks at commits, branches, and diffs in a repo.</value></data>
+  <data name="McpFetch" xml:space="preserve"><value>Fetch</value></data>
+  <data name="McpFetchHint" xml:space="preserve"><value>Downloads page text from a URL.</value></data>
+  <data name="McpPlaywright" xml:space="preserve"><value>Playwright</value></data>
+  <data name="McpPlaywrightHint" xml:space="preserve"><value>Opens a browser, clicks, and reads pages.</value></data>
+  <data name="McpPuppeteer" xml:space="preserve"><value>Puppeteer</value></data>
+  <data name="McpPuppeteerHint" xml:space="preserve"><value>Controls Chrome: screenshots and automation.</value></data>
+  <data name="McpSqlite" xml:space="preserve"><value>SQLite</value></data>
+  <data name="McpSqliteHint" xml:space="preserve"><value>SQL queries against a local database in the XNGPad folder.</value></data>
+  <data name="McpEverything" xml:space="preserve"><value>Everything</value></data>
+  <data name="McpEverythingHint" xml:space="preserve"><value>Test MCP: checks that the agent can see tools.</value></data>
+  <data name="McpGithub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="McpGithubHint" xml:space="preserve"><value>GitHub repos. Needs a GITHUB_PERSONAL_ACCESS_TOKEN.</value></data>
+  <data name="McpGitlab" xml:space="preserve"><value>GitLab</value></data>
+  <data name="McpGitlabHint" xml:space="preserve"><value>GitLab repos. Needs a token.</value></data>
+  <data name="McpPostgres" xml:space="preserve"><value>PostgreSQL</value></data>
+  <data name="McpPostgresHint" xml:space="preserve"><value>Queries PostgreSQL. Needs a connection string.</value></data>
+  <data name="McpRedis" xml:space="preserve"><value>Redis</value></data>
+  <data name="McpRedisHint" xml:space="preserve"><value>Redis keys and values. Needs a server address.</value></data>
+  <data name="McpSlack" xml:space="preserve"><value>Slack</value></data>
+  <data name="McpSlackHint" xml:space="preserve"><value>Slack channels and messages. Needs a token.</value></data>
+  <data name="McpGdrive" xml:space="preserve"><value>Google Drive</value></data>
+  <data name="McpGdriveHint" xml:space="preserve"><value>Google Drive files. Needs Google sign-in.</value></data>
+  <data name="McpBrave" xml:space="preserve"><value>Brave Search</value></data>
+  <data name="McpBraveHint" xml:space="preserve"><value>Brave search. Needs an API key.</value></data>
+  <data name="McpMaps" xml:space="preserve"><value>Google Maps</value></data>
+  <data name="McpMapsHint" xml:space="preserve"><value>Maps and places. Needs a Google API key.</value></data>
+  <data name="McpSentry" xml:space="preserve"><value>Sentry</value></data>
+  <data name="McpSentryHint" xml:space="preserve"><value>Sentry errors. Needs a token.</value></data>
+  <data name="McpMarkitdown" xml:space="preserve"><value>MarkItDown</value></data>
+  <data name="McpMarkitdownHint" xml:space="preserve"><value>Turns PDF, Office, and HTML into Markdown.</value></data>
+  <data name="McpDdg" xml:space="preserve"><value>DuckDuckGo</value></data>
+  <data name="McpDdgHint" xml:space="preserve"><value>DuckDuckGo search, no API key.</value></data>
+  <data name="McpYoutube" xml:space="preserve"><value>YouTube</value></data>
+  <data name="McpYoutubeHint" xml:space="preserve"><value>YouTube captions and transcripts.</value></data>
+  <data name="McpDockerMcp" xml:space="preserve"><value>Docker MCP</value></data>
+  <data name="McpDockerMcpHint" xml:space="preserve"><value>Lists Docker containers and images.</value></data>
+  <data name="McpArxiv" xml:space="preserve"><value>arXiv</value></data>
+  <data name="McpArxivHint" xml:space="preserve"><value>Searches scientific papers on arXiv.</value></data>
+  <data name="McpDesktop" xml:space="preserve"><value>Desktop Commander</value></data>
+  <data name="McpDesktopHint" xml:space="preserve"><value>Files and commands on this PC.</value></data>
+  <data name="McpK8s" xml:space="preserve"><value>Kubernetes</value></data>
+  <data name="McpK8sHint" xml:space="preserve"><value>Pods and services in a Kubernetes cluster.</value></data>
+  <data name="McpWiki" xml:space="preserve"><value>Wikipedia</value></data>
+  <data name="McpWikiHint" xml:space="preserve"><value>Wikipedia articles.</value></data>
+  <data name="GuideGeneric" xml:space="preserve"><value>This MCP needs an API key.
+
+1. Click “Open site” for the dashboard that issues the key.
+2. Sign in and create an API key / token / integration.
+3. Copy the key.
+4. Click “Token” on this MCP in XNGPad and paste it.
+5. I will write it into environment in opencode.json.
+6. Restart OpenCode.
+
+The key is a secret. Do not commit the config.</value></data>
+  <data name="McpFirecrawlHint" xml:space="preserve"><value>Scrapes and searches sites. Needs a Firecrawl API key.</value></data>
+  <data name="McpExaHint" xml:space="preserve"><value>Exa search for agents. Needs EXA_API_KEY.</value></data>
+  <data name="McpTavilyHint" xml:space="preserve"><value>Tavily search. Needs TAVILY_API_KEY.</value></data>
+  <data name="McpNotionHint" xml:space="preserve"><value>Notion pages. Needs NOTION_TOKEN (integration).</value></data>
+  <data name="McpChromeHint" xml:space="preserve"><value>Controls Chrome via DevTools: tabs, DOM, network.</value></data>
+  <data name="McpMongoHint" xml:space="preserve"><value>Queries MongoDB.</value></data>
+  <data name="McpFigmaHint" xml:space="preserve"><value>Figma files. Needs FIGMA_API_KEY.</value></data>
+  <data name="McpHfHint" xml:space="preserve"><value>Hugging Face models and datasets. Needs HF_TOKEN.</value></data>
+  <data name="McpNeonHint" xml:space="preserve"><value>Neon Postgres. Needs NEON_API_KEY.</value></data>
+  <data name="McpSupabaseHint" xml:space="preserve"><value>Supabase projects. Needs SUPABASE_ACCESS_TOKEN.</value></data>
+  <data name="McpBrowserbaseHint" xml:space="preserve"><value>Browserbase cloud browser. Needs an API key.</value></data>
+  <data name="McpJinaHint" xml:space="preserve"><value>Jina URL reader and embeddings. Needs JINA_API_KEY.</value></data>
+  <data name="McpMermaidHint" xml:space="preserve"><value>Renders Mermaid diagrams.</value></data>
+  <data name="McpHnHint" xml:space="preserve"><value>Hacker News feed and comments.</value></data>
+  <data name="McpQdrantHint" xml:space="preserve"><value>Qdrant vector search.</value></data>
+  <data name="McpEsHint" xml:space="preserve"><value>Elasticsearch search.</value></data>
+  <data name="McpTimeHint" xml:space="preserve"><value>Current time and time zones.</value></data>
+  <data name="McpDetails" xml:space="preserve"><value>Details</value></data>
+  <data name="McpSearch" xml:space="preserve"><value>Search MCP</value></data>
+  <data name="McpAdded" xml:space="preserve"><value>Added</value></data>
+  <data name="McpAvailable" xml:space="preserve"><value>Available</value></data>
+  <data name="McpHidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="McpHide" xml:space="preserve"><value>Hide</value></data>
+  <data name="McpRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="McpOpenTokenSite" xml:space="preserve"><value>Open site</value></data>
+  <data name="McpToken" xml:space="preserve"><value>Token</value></data>
+  <data name="TokenSave" xml:space="preserve"><value>Save</value></data>
+  <data name="TokenHint" xml:space="preserve"><value>Paste the token or key here. I will write it into the OpenCode config.</value></data>
+  <data name="TokenSaved" xml:space="preserve"><value>Token saved. Restart OpenCode.</value></data>
+  <data name="GuideGithub" xml:space="preserve"><value>You need a GitHub Personal Access Token.
+
+1. Open github.com and sign in.
+2. Click your avatar (top right) → Settings.
+3. Bottom left: Developer settings.
+4. Personal access tokens → Tokens (classic).
+5. Generate new token (classic).
+6. Any name, pick an expiry.
+7. Enable repo (for private repos). public_repo is enough for public ones.
+8. Generate token. Copy it now — GitHub will not show it again.
+9. In opencode.json under mcp.github.environment set:
+   GITHUB_PERSONAL_ACCESS_TOKEN = that token
+
+Do not commit the token or paste it in public chats.</value></data>
+  <data name="GuideGitlab" xml:space="preserve"><value>You need a GitLab Personal Access Token.
+
+1. Open gitlab.com (or your GitLab) and sign in.
+2. Avatar → Preferences.
+3. Left: Access Tokens.
+4. Add new token.
+5. Any name. Scopes: read_api and read_repository (add write_repository to write).
+6. Create personal access token. Copy it now.
+7. In opencode.json under mcp.gitlab.environment:
+   GITLAB_PERSONAL_ACCESS_TOKEN = token
+   If not gitlab.com, also GITLAB_API_URL = https://your-gitlab/api/v4
+
+Keep the token secret.</value></data>
+  <data name="GuideSlack" xml:space="preserve"><value>You need a Slack Bot Token.
+
+1. Open https://api.slack.com/apps
+2. Create New App → From scratch.
+3. App name and workspace.
+4. Left: OAuth &amp; Permissions.
+5. Bot Token Scopes: channels:history, channels:read, chat:write (add more if needed).
+6. Install to Workspace. Approve.
+7. Copy Bot User OAuth Token — it starts with xoxb-
+8. In opencode.json under mcp.slack.environment:
+   SLACK_BOT_TOKEN = xoxb-...
+
+This token can read the workspace. Treat it like a password.</value></data>
+  <data name="GuideBrave" xml:space="preserve"><value>You need a Brave Search API key.
+
+1. Open https://brave.com/search/api/
+2. Get started / Subscribe and register.
+3. In the API dashboard create an API key.
+4. Copy the key.
+5. In opencode.json under mcp.brave-search.environment:
+   BRAVE_API_KEY = key
+
+The free quota is small. This MCP will not work without a key.</value></data>
+  <data name="GuideMaps" xml:space="preserve"><value>You need a Google Maps API key.
+
+1. Open https://console.cloud.google.com/
+2. Create a project (or pick one).
+3. APIs &amp; Services → Library. Enable Maps JavaScript API and Places API (Geocoding too if you need it).
+4. APIs &amp; Services → Credentials → Create credentials → API key.
+5. Restrict the key to Maps APIs.
+6. In opencode.json under mcp.google-maps.environment:
+   GOOGLE_MAPS_API_KEY = key
+
+The key is tied to Google Cloud billing. Set quotas.</value></data>
+  <data name="GuideGdrive" xml:space="preserve"><value>You need Google Drive OAuth access.
+
+1. https://console.cloud.google.com/ — a project.
+2. APIs &amp; Services → Library → enable Google Drive API.
+3. APIs &amp; Services → Credentials → Create credentials → OAuth client ID.
+4. Type: Desktop app. Download the client JSON.
+5. OAuth consent screen: External, add your Gmail as a test user.
+6. The gdrive MCP README says where to put credentials.json (often GOOGLE_APPLICATION_CREDENTIALS = path to the json).
+
+The first run opens a Google browser login — use the account whose Drive you need.</value></data>
+  <data name="GuideSentry" xml:space="preserve"><value>You need a Sentry Auth Token.
+
+1. Sign in at https://sentry.io
+2. Avatar → User settings → Auth Tokens
+   or Organization settings → Auth Tokens.
+3. Create New Token.
+4. Scopes: project:read, event:read (more if you write).
+5. Copy the token.
+6. In opencode.json under mcp.sentry.environment:
+   SENTRY_AUTH_TOKEN = token
+   You may also need SENTRY_ORG = the slug from sentry.io/organizations/THIS-SLUG/
+
+Do not publish the token.</value></data>
+  <data name="GuidePostgres" xml:space="preserve"><value>You need a PostgreSQL connection string, not a website token.
+
+Format:
+postgresql://USER:PASSWORD@HOST:5432/DATABASE
+
+Examples:
+• local: postgresql://postgres:postgres@127.0.0.1:5432/app
+• hosted: panel (Railway, Supabase, Neon) → Connection string / URI.
+
+Put it in the postgres MCP command args in opencode.json, or in environment, as that MCP’s README says.
+
+The password in the URI is a secret. Do not commit it.</value></data>
+  <data name="GuideRedis" xml:space="preserve"><value>You need a Redis URL, not a GitHub token.
+
+Usually:
+redis://127.0.0.1:6379
+or
+redis://:PASSWORD@HOST:6379
+
+Where:
+• local Redis → 127.0.0.1 port 6379
+• cloud (Redis Cloud, Upstash) → Connect / URL tab
+
+Put the URL in the redis MCP command or environment in opencode.json, as the GitHub README says.
+
+The password in the URL is a secret.</value></data>
+  <data name="ErrorInstallFailed" xml:space="preserve"><value>Install failed. Try again or install it yourself.</value></data>
+  <data name="CheckAgain" xml:space="preserve"><value>Check again</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsPort" xml:space="preserve"><value>Port</value></data>
+  <data name="SettingsContainerName" xml:space="preserve"><value>Container name</value></data>
+  <data name="SettingsSearxngUrl" xml:space="preserve"><value>SearXNG address</value></data>
+  <data name="SettingsOpenCodePath" xml:space="preserve"><value>OpenCode file</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="SettingsSave" xml:space="preserve"><value>Save</value></data>
+  <data name="SettingsCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SettingsBack" xml:space="preserve"><value>Back</value></data>
+  <data name="SettingsLanguageOs" xml:space="preserve"><value>System default</value></data>
+  <data name="SettingsLanguageRu" xml:space="preserve"><value>Русский</value></data>
+  <data name="SettingsLanguageEn" xml:space="preserve"><value>English</value></data>
+  <data name="SettingsPathPlaceholder" xml:space="preserve"><value>auto</value></data>
+  <data name="ErrorDockerNotInstalled" xml:space="preserve"><value>Docker is not installed. Click “Download Docker”.</value></data>
+  <data name="ErrorWsl" xml:space="preserve"><value>Open Docker Desktop, wait for the green whale icon, then “Check again”.</value></data>
+  <data name="ErrorDockerStarting" xml:space="preserve"><value>Docker Desktop is open; the engine is still starting. Wait for “Engine running” at the bottom, then “Check again”.</value></data>
+  <data name="ErrorPortBusy" xml:space="preserve"><value>Port {0} is in use. Change it in Settings or close the other app.</value></data>
+  <data name="ErrorJson403" xml:space="preserve"><value>SearXNG blocked the API. Click “Enable SearXNG” again (I will turn on json).</value></data>
+  <data name="ErrorNodeMissing" xml:space="preserve"><value>OpenCode needs Node.js.</value></data>
+  <data name="DownloadNode" xml:space="preserve"><value>Download Node.js</value></data>
+  <data name="ErrorOpenCodeUnavailable" xml:space="preserve"><value>Cannot open the OpenCode config. Path: {0}</value></data>
+  <data name="ErrorBrokenJson" xml:space="preserve"><value>OpenCode config is invalid. I did not change it. Backup: {0}</value></data>
+  <data name="ErrorDaemon" xml:space="preserve"><value>Docker is installed but not responding. Click “Start Docker”.</value></data>
+  <data name="ErrorHealth" xml:space="preserve"><value>SearXNG is not responding. Wait a minute or click “Show log”.</value></data>
+  <data name="ErrorSettingsYmlWait" xml:space="preserve"><value>SearXNG has not created settings yet. Wait and click “Enable SearXNG” again.</value></data>
+  <data name="ConfirmRecreate" xml:space="preserve"><value>Container “{0}” is used by another image. Delete and recreate?</value></data>
+  <data name="Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="No" xml:space="preserve"><value>No</value></data>
+  <data name="BusyPulling" xml:space="preserve"><value>Downloading SearXNG image…</value></data>
+  <data name="BusyStartingDocker" xml:space="preserve"><value>Starting Docker Desktop…</value></data>
+  <data name="BusyStartingSearxng" xml:space="preserve"><value>Starting SearXNG…</value></data>
+  <data name="BusyEnablingJson" xml:space="preserve"><value>Turning on JSON API…</value></data>
+  <data name="BusyConnecting" xml:space="preserve"><value>Connecting to OpenCode…</value></data>
+  <data name="BusyStopping" xml:space="preserve"><value>Stopping SearXNG…</value></data>
+  <data name="BusyRefreshing" xml:space="preserve"><value>Checking…</value></data>
+  <data name="LogTitle" xml:space="preserve"><value>SearXNG log</value></data>
+  <data name="Close" xml:space="preserve"><value>Close</value></data>
+  <data name="StatusChecking" xml:space="preserve"><value>checking…</value></data>
+  <data name="RestartOpenCodeHint" xml:space="preserve"><value>Restart OpenCode, then type in chat: use searxng</value></data>
+  <data name="ConnectedOk" xml:space="preserve"><value>OpenCode is connected. Restart OpenCode, then type in chat: use searxng</value></data>
+  <data name="DisconnectedOk" xml:space="preserve"><value>OpenCode is disconnected from SearXNG.</value></data>
+  <data name="SearxngStopped" xml:space="preserve"><value>SearXNG is off.</value></data>
+  <data name="DockerStarted" xml:space="preserve"><value>Docker is running.</value></data>
+  <data name="SearxngReady" xml:space="preserve"><value>SearXNG is ready: {0}</value></data>
+  <data name="ErrorDockerCommand" xml:space="preserve"><value>Docker could not finish. Click “Check again”.</value></data>
+  <data name="ErrorPull" xml:space="preserve"><value>Could not download the SearXNG image. Check the internet, then click “Enable SearXNG” again.</value></data>
+  <data name="ErrorDockerTimeout" xml:space="preserve"><value>Docker is taking too long. Open Docker Desktop, wait for the green whale, then “Check again”.</value></data>
+  <data name="ErrorDockerDisk" xml:space="preserve"><value>Not enough disk space for the image. Free some space, then click “Enable SearXNG” again.</value></data>
+  <data name="ErrorGeneric" xml:space="preserve"><value>Something went wrong. Click “Check again”.</value></data>
+  <data name="RestartPcAfterDocker" xml:space="preserve"><value>Restart the PC after installing Docker, then click “Check again”.</value></data>
+  <data name="DockerNotInPath" xml:space="preserve"><value>Docker is installed but not visible yet. Restart the PC.</value></data>
+  <data name="LogEmpty" xml:space="preserve"><value>No log yet.</value></data>
+  <data name="ErrorNoContainer" xml:space="preserve"><value>SearXNG is not created yet. Click “Enable SearXNG”.</value></data>
+  <data name="SettingsSaved" xml:space="preserve"><value>Settings saved.</value></data>
+  <data name="EnableSearxngFirst" xml:space="preserve"><value>Turn on SearXNG first.</value></data>
+  <data name="DockerStartFailed" xml:space="preserve"><value>Docker Desktop did not start. Open it yourself, wait for the green whale, then “Check again”.</value></data>
+  <data name="BusyLoadingMcps" xml:space="preserve"><value>Loading MCP catalog…</value></data>
+  <data name="FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="FilterKey" xml:space="preserve"><value>Needs key</value></data>
+  <data name="FilterNoKey" xml:space="preserve"><value>No key</value></data>
+  <data name="FilterNpm" xml:space="preserve"><value>npx</value></data>
+  <data name="FilterRemote" xml:space="preserve"><value>Remote</value></data>
+</root>

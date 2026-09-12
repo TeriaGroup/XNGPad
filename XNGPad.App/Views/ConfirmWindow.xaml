@@ -1,0 +1,23 @@
+<Window x:Class="XNGPad.App.Views.ConfirmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="XNGPad"
+        Width="380"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{StaticResource BgBrush}"
+        Foreground="{StaticResource FgBrush}">
+    <StackPanel Margin="20">
+        <TextBlock x:Name="MessageText" TextWrapping="Wrap" FontSize="15" Margin="0,0,0,20"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="NoButton" Style="{StaticResource BarButton}" Margin="0" Click="No_Click"/>
+            <Button x:Name="YesButton" Grid.Column="2" Style="{StaticResource AccentButton}" Margin="0" Click="Yes_Click"/>
+        </Grid>
+    </StackPanel>
+</Window>
