@@ -206,8 +206,8 @@ public class McpRegistryTests
         var def = McpCatalog.All.First(x => x.Id == "kompas-3d");
         var node = McpCatalog.CreateNode(def, new AppSettings());
         var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
-        Assert.Single(cmd);
-        Assert.EndsWith("kompas-mcp.exe", cmd[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("schema-proxy.mjs", cmd[^1]);
+        Assert.EndsWith("kompas-mcp.exe", node["environment"]!["KOMPAS_MCP_EXE"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
         Assert.False(McpCatalog.NeedsNpx(def));
     }
 }

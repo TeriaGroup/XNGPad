@@ -143,6 +143,9 @@ public sealed class OpenCodeService
         changed |= DisableDeadRemote(mcp, "agentic-news");
         changed |= DisableDeadRemote(mcp, "ufp");
         changed |= EnsureLocalTimeout(mcp);
+        changed |= DisableMissingPackage(mcp, "git", "server-git");
+        changed |= DisableMissingPackage(mcp, "markitdown", "markitdown-mcp");
+        changed |= RepairKompasNode(mcp);
         if (!changed)
             return false;
         WriteBackup(path);
@@ -214,6 +217,47 @@ public sealed class OpenCodeService
             return false;
         node["enabled"] = false;
         return true;
+    }
+
+    private static bool DisableMissingPackage(JsonObject mcp, string id, string marker)
+    {
+        if (mcp[id] is not JsonObject node || node["command"] is not JsonArray cmd)
+            return false;
+        var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
+        if (!text.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (node["enabled"] is JsonValue en && en.TryGetValue<bool>(out var on) && !on)
+            return false;
+        node["enabled"] = false;
+        return true;
+    }
+
+    private static bool RepairKompasNode(JsonObject mcp)
+    {
+        if (mcp["kompas-3d"] is not JsonObject node || node["command"] is not JsonArray cmd)
+            return false;
+        var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
+        if (text.Contains("schema-proxy.mjs", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (!text.Contains("kompas-mcp.exe", StringComparison.OrdinalIgnoreCase))
+            return false;
+        KompasConfig.EnsureProxy();
+        var exe = McpCatalog.KompasExePath();
+        var dir = McpCatalog.KompasDir();
+        node["command"] = new JsonArray(NodeExe(), McpCatalog.KompasProxyPath());
+        node["cwd"] = dir;
+        node["timeout"] = 120000;
+        node["enabled"] = true;
+        var env = node["environment"] as JsonObject ?? new JsonObject();
+        env["KOMPAS_MCP_EXE"] = exe;
+        node["environment"] = env;
+        return true;
+    }
+
+    private static string NodeExe()
+    {
+        var candidate = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe");
+        return File.Exists(candidate) ? candidate : "node";
     }
 
     private static bool EnsureLocalTimeout(JsonObject mcp)

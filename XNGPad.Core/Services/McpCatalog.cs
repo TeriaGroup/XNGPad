@@ -47,12 +47,12 @@ public static class McpCatalog
         new("fetch", "Fetch", "McpFetchHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch", "mcp-fetch"),
         new("filesystem", "Filesystem", "McpFilesystemHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem", "@modelcontextprotocol/server-filesystem", McpExtra.Filesystem),
         new("gdrive", "Google Drive", "McpGdriveHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/gdrive", "@modelcontextprotocol/server-gdrive", GuideKey: "GuideGdrive", TokenUrl: "https://console.cloud.google.com/apis/library/drive.googleapis.com", TokenEnvKey: "GOOGLE_APPLICATION_CREDENTIALS"),
-        new("git", "Git", "McpGitHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/git", "@modelcontextprotocol/server-git"),
+        new("git", "Git", "McpGitHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/git", ""),
         new("github", "GitHub", "McpGithubHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/github", "@modelcontextprotocol/server-github", GuideKey: "GuideGithub", TokenUrl: "https://github.com/settings/tokens", TokenEnvKey: "GITHUB_PERSONAL_ACCESS_TOKEN"),
         new("gitlab", "GitLab", "McpGitlabHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/gitlab", "@modelcontextprotocol/server-gitlab", GuideKey: "GuideGitlab", TokenUrl: "https://gitlab.com/-/user_settings/personal_access_tokens", TokenEnvKey: "GITLAB_PERSONAL_ACCESS_TOKEN"),
         new("google-maps", "Google Maps", "McpMapsHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/google-maps", "@modelcontextprotocol/server-google-maps", GuideKey: "GuideMaps", TokenUrl: "https://console.cloud.google.com/apis/credentials", TokenEnvKey: "GOOGLE_MAPS_API_KEY"),
         new("kubernetes", "mcp-server-kubernetes", "McpK8sHint", "https://github.com/Flux159/mcp-server-kubernetes", "mcp-server-kubernetes"),
-        new("markitdown", "MarkItDown", "McpMarkitdownHint", "https://github.com/microsoft/markitdown", "@microsoft/markitdown-mcp"),
+        new("markitdown", "MarkItDown", "McpMarkitdownHint", "https://github.com/microsoft/markitdown", ""),
         new("memory", "Memory", "McpMemoryHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/memory", "@modelcontextprotocol/server-memory"),
         new("playwright", "Playwright", "McpPlaywrightHint", "https://github.com/microsoft/playwright-mcp", "@playwright/mcp"),
         new("postgres", "PostgreSQL", "McpPostgresHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres", "@modelcontextprotocol/server-postgres", GuideKey: "GuidePostgres", TokenEnvKey: "POSTGRES_CONNECTION_STRING", TokenAsArg: true),
@@ -117,13 +117,16 @@ public static class McpCatalog
         }
 
         if (def.Extra == McpExtra.Kompas)
-            return Local([KompasExePath()], env);
+            return KompasNode();
 
         if (def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
             return OfficeNode(def.Extra, env);
 
         if (string.IsNullOrEmpty(def.Package) && !string.IsNullOrEmpty(def.RemoteUrl))
             return Remote(def, secret, env);
+
+        if (string.IsNullOrEmpty(def.Package))
+            throw new XNGPadException("ErrorGeneric");
 
         var args = new List<string> { "npx", "-y", def.Package };
         switch (def.Extra)
@@ -144,6 +147,27 @@ public static class McpCatalog
             args.Add(secret);
 
         return Local(args, env);
+    }
+
+    public static string KompasDir() => Path.GetDirectoryName(KompasExePath())!;
+
+    public static string KompasProxyPath() => Path.Combine(KompasDir(), "schema-proxy.mjs");
+
+    private static JsonObject KompasNode()
+    {
+        var dir = KompasDir();
+        var node = Local([NodeExe(), KompasProxyPath()], new JsonObject
+        {
+            ["KOMPAS_MCP_EXE"] = KompasExePath()
+        });
+        node["cwd"] = dir;
+        return node;
+    }
+
+    private static string NodeExe()
+    {
+        var candidate = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe");
+        return File.Exists(candidate) ? candidate : "node";
     }
 
     public static string KompasExePath()
