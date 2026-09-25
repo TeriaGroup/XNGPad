@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -102,31 +103,16 @@ public partial class MainViewModel : ObservableObject
     public bool IsHome => !IsSettingsOpen;
 
     public ObservableCollection<McpRow> McpRows { get; } = [];
-    public ObservableCollection<McpRow> AddedMcpRows { get; } = [];
-    public ObservableCollection<McpRow> CatalogMcpRows { get; } = [];
-    public ObservableCollection<McpRow> HiddenMcpRows { get; } = [];
+    public ObservableCollection<McpRow> FilteredMcpRows { get; } = [];
     public ObservableCollection<DownloadJob> DownloadJobs { get; } = [];
     public ObservableCollection<McpRow> UsedMcpRows { get; } = [];
+    public ObservableCollection<McpRow> FilteredUsedRows { get; } = [];
 
-    [ObservableProperty] private string installPage = "catalog";
-    [ObservableProperty] private bool showUsedEmpty;
-    public bool InstallIsCatalog => InstallPage == "catalog";
-    public bool InstallIsUsed => InstallPage == "used";
-
-    partial void OnInstallPageChanged(string value)
-    {
-        OnPropertyChanged(nameof(InstallIsCatalog));
-        OnPropertyChanged(nameof(InstallIsUsed));
-    }
-
-    [RelayCommand]
-    private void SetInstallPage(string? page)
-    {
-        if (page is "catalog" or "used")
-            InstallPage = page;
-    }
+    [ObservableProperty] private bool showUsedHint;
+    [ObservableProperty] private bool showFilterEmpty;
 
     private readonly Dictionary<string, McpRow> _extraUsed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _remoteConfigIds = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty] private bool showDownloadQueue;
     [ObservableProperty] private bool queueBusy;
@@ -136,56 +122,23 @@ public partial class MainViewModel : ObservableObject
     private readonly Queue<(McpRow Row, string? Secret, string? Secret2, DownloadJob Job)> _mcpQueue = new();
     private int _mcpPump;
 
-    [ObservableProperty] private bool showAddedMcps;
-    [ObservableProperty] private bool showCatalogMcps;
-    [ObservableProperty] private bool showHiddenMcps;
-    [ObservableProperty] private bool addedMcpsExpanded = true;
-    [ObservableProperty] private bool catalogMcpsExpanded = true;
-    [ObservableProperty] private bool hiddenMcpsExpanded;
-
-    public string AddedMcpsArrow => AddedMcpsExpanded ? "▼" : "▶";
-    public string CatalogMcpsArrow => CatalogMcpsExpanded ? "▼" : "▶";
-    public string HiddenMcpsArrow => HiddenMcpsExpanded ? "▼" : "▶";
-
-    partial void OnAddedMcpsExpandedChanged(bool value) => OnPropertyChanged(nameof(AddedMcpsArrow));
-    partial void OnCatalogMcpsExpandedChanged(bool value) => OnPropertyChanged(nameof(CatalogMcpsArrow));
-    partial void OnHiddenMcpsExpandedChanged(bool value) => OnPropertyChanged(nameof(HiddenMcpsArrow));
-
-    [RelayCommand]
-    private void ToggleAddedMcps() => AddedMcpsExpanded = !AddedMcpsExpanded;
-
-    [RelayCommand]
-    private void ToggleCatalogMcps() => CatalogMcpsExpanded = !CatalogMcpsExpanded;
-
-    [RelayCommand]
-    private void ToggleHiddenMcps() => HiddenMcpsExpanded = !HiddenMcpsExpanded;
-
     [ObservableProperty] private string mcpSearch = "";
-    [ObservableProperty] private string mcpFilter = "all";
+    [ObservableProperty] private int mcpFilterIndex;
 
-    public bool FilterIsAll => McpFilter == "all";
-    public bool FilterIsKey => McpFilter == "key";
-    public bool FilterIsNoKey => McpFilter == "nokey";
-    public bool FilterIsNpm => McpFilter == "npm";
-    public bool FilterIsRemote => McpFilter == "remote";
+    private static readonly string[] FilterIds = ["all", "added", "available", "hidden", "used", "key", "nokey", "npm", "remote"];
+
+    public string McpFilter => FilterIds[Math.Clamp(McpFilterIndex, 0, FilterIds.Length - 1)];
+    public bool ShowUsedList => McpFilter == "used";
+    public bool ShowCatalogList => McpFilter != "used";
 
     partial void OnMcpSearchChanged(string value) => ApplyMcpFilter();
 
-    partial void OnMcpFilterChanged(string value)
+    partial void OnMcpFilterIndexChanged(int value)
     {
-        OnPropertyChanged(nameof(FilterIsAll));
-        OnPropertyChanged(nameof(FilterIsKey));
-        OnPropertyChanged(nameof(FilterIsNoKey));
-        OnPropertyChanged(nameof(FilterIsNpm));
-        OnPropertyChanged(nameof(FilterIsRemote));
+        OnPropertyChanged(nameof(McpFilter));
+        OnPropertyChanged(nameof(ShowUsedList));
+        OnPropertyChanged(nameof(ShowCatalogList));
         ApplyMcpFilter();
-    }
-
-    [RelayCommand]
-    private void SetMcpFilter(string? filter)
-    {
-        if (!string.IsNullOrWhiteSpace(filter))
-            McpFilter = filter;
     }
 
     public string DefaultOpenCodePath => OpenCodeService.DefaultConfigPath;
@@ -464,6 +417,125 @@ public partial class MainViewModel : ObservableObject
         ShellOpen.Url(_settings.ResolvedUrl());
     }
 
+    [ObservableProperty] private bool openCodeRunning;
+
+    public string OpenCodePowerText => Loc.Get(OpenCodeRunning ? "OcQuit" : "OcStart");
+
+    partial void OnOpenCodeRunningChanged(bool value) => OnPropertyChanged(nameof(OpenCodePowerText));
+
+    [RelayCommand]
+    private void ToggleOpenCode()
+    {
+        if (IsOpenCodeProcessRunning())
+        {
+            QuitOpenCode();
+            OpenCodeRunning = false;
+            return;
+        }
+
+        LaunchOpenCode();
+        OpenCodeRunning = IsOpenCodeProcessRunning();
+    }
+
+    [RelayCommand]
+    private void LaunchOpenCode()
+    {
+        var path = InstallService.FindOpenCode();
+        if (string.IsNullOrWhiteSpace(path) || path == "OpenCode" || !File.Exists(path))
+        {
+            Banner = Loc.Get("OpenCodeMissingLaunch");
+            BannerLevel = "warn";
+            return;
+        }
+
+        StartOpenCode(path);
+        OpenCodeRunning = true;
+    }
+
+    [RelayCommand]
+    private async Task RestartOpenCodeAsync()
+    {
+        var path = InstallService.FindOpenCode();
+        StopOpenCode();
+        await Task.Delay(700);
+        path = InstallService.FindOpenCode() ?? path;
+        if (string.IsNullOrWhiteSpace(path) || path == "OpenCode" || !File.Exists(path))
+        {
+            Banner = Loc.Get("OpenCodeMissingLaunch");
+            BannerLevel = "warn";
+            return;
+        }
+
+        StartOpenCode(path);
+        OpenCodeRunning = true;
+        Banner = Loc.Get("OpenCodeRestarted");
+        BannerLevel = "ok";
+    }
+
+    [RelayCommand]
+    private void QuitOpenCode()
+    {
+        if (!StopOpenCode())
+        {
+            Banner = Loc.Get("OpenCodeNotRunning");
+            BannerLevel = "info";
+            return;
+        }
+
+        Banner = Loc.Get("OpenCodeStopped");
+        BannerLevel = "ok";
+        OpenCodeRunning = false;
+    }
+
+    private static void StartOpenCode(string path)
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = path,
+            UseShellExecute = true
+        });
+    }
+
+    private static bool StopOpenCode()
+    {
+        var stopped = false;
+        foreach (var name in new[] { "OpenCode", "opencode" })
+        {
+            foreach (var proc in Process.GetProcessesByName(name))
+            {
+                try
+                {
+                    proc.Kill(entireProcessTree: true);
+                    stopped = true;
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    proc.Dispose();
+                }
+            }
+        }
+
+        return stopped;
+    }
+
+    private static bool IsOpenCodeProcessRunning()
+    {
+        foreach (var name in new[] { "OpenCode", "opencode" })
+        {
+            var procs = Process.GetProcessesByName(name);
+            var any = procs.Length > 0;
+            foreach (var proc in procs)
+                proc.Dispose();
+            if (any)
+                return true;
+        }
+
+        return false;
+    }
+
     [RelayCommand]
     private void OpenOpenCodeFolder()
     {
@@ -593,8 +665,11 @@ public partial class MainViewModel : ObservableObject
 
     private async Task ToggleMcpAsync(McpRow row)
     {
-        var remoteOnly = string.IsNullOrEmpty(row.Def.Package) && !string.IsNullOrEmpty(row.Def.RemoteUrl);
-        if (!remoteOnly && McpCatalog.NeedsNpx(row.Def) && !_install.IsNodeInstalled() && !_node.IsNpxAvailable())
+        var remoteOnly = row.Def.Extra != McpExtra.Ufp
+            && string.IsNullOrEmpty(row.Def.Package)
+            && !string.IsNullOrEmpty(row.Def.RemoteUrl);
+        var needsNode = McpCatalog.NeedsNpx(row.Def) || row.Def.Extra == McpExtra.Ufp;
+        if (!remoteOnly && needsNode && !_install.IsNodeInstalled() && !_node.IsNpxAvailable())
         {
             Banner = Loc.Get("NeedNodeFirst");
             BannerLevel = "warn";
@@ -611,6 +686,28 @@ public partial class MainViewModel : ObservableObject
                 return;
             secret = pair.Value.First;
             secret2 = pair.Value.Second;
+        }
+        else if (!_opencode.HasMcp(path, row.Id) && row.Def.Extra == McpExtra.Kompas)
+        {
+            if (!KompasConfig.Exists)
+            {
+                secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHintKompas"), row.TokenUrl);
+                if (secret == null)
+                    return;
+            }
+
+            var folder = _dialogs.AskFolder(Loc.Get("KompasFolderTitle"), SuggestKompasFolder());
+            if (folder == null)
+                return;
+            if (McpCatalog.ResolveStudyExe(folder) == null)
+            {
+                Banner = Loc.Get("KompasFolderInvalid");
+                BannerLevel = "warn";
+                return;
+            }
+
+            _settings.KompasInstallDir = folder;
+            _settingsService.Save(_settings);
         }
         else if (!_opencode.HasMcp(path, row.Id) && row.TokenEnvKey != null)
         {
@@ -629,6 +726,19 @@ public partial class MainViewModel : ObservableObject
         }
 
         EnqueueMcp(row, secret, secret2);
+    }
+
+    private string? SuggestKompasFolder()
+    {
+        if (McpCatalog.ResolveStudyExe(_settings.KompasInstallDir) != null)
+            return _settings.KompasInstallDir;
+        foreach (var candidate in new[] { @"C:\APPs\ascon\kompas", @"C:\APPs\kompas" })
+        {
+            if (McpCatalog.ResolveStudyExe(candidate) != null)
+                return candidate;
+        }
+
+        return null;
     }
 
     private void EnqueueMcp(McpRow row, string? secret, string? secret2)
@@ -671,7 +781,7 @@ public partial class MainViewModel : ObservableObject
                 {
                     var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
                     if (McpCatalog.NeedsKompasBin(item.Row.Def))
-                        await _install.EnsureKompasMcpAsync(Lifetime.Token);
+                        await _install.EnsureKompasMcpAsync(Lifetime.Token, item.Secret);
                     if (McpCatalog.NeedsPython(item.Row.Def))
                         await _install.EnsureOfficeMcpAsync(Lifetime.Token);
                     UnhideMcpId(item.Row.Id);
@@ -727,6 +837,18 @@ public partial class MainViewModel : ObservableObject
             secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHintKompas"), row.TokenUrl);
             if (secret == null)
                 return;
+            var folder = _dialogs.AskFolder(Loc.Get("KompasFolderTitle"), SuggestKompasFolder());
+            if (folder == null)
+                return;
+            if (McpCatalog.ResolveStudyExe(folder) == null)
+            {
+                Banner = Loc.Get("KompasFolderInvalid");
+                BannerLevel = "warn";
+                return;
+            }
+
+            _settings.KompasInstallDir = folder;
+            _settingsService.Save(_settings);
             await RunBusyAsync("BusyInstallingMcp", async ct =>
             {
                 await _install.SaveKompasConfigAsync(secret, ct);
@@ -842,8 +964,9 @@ public partial class MainViewModel : ObservableObject
             row.ActionText = Loc.Get(on ? "RemoveMcp" : "AddMcp");
         }
 
-        ApplyMcpFilter();
         RebuildUsed(path);
+        RefreshRemoteIds(path);
+        ApplyMcpFilter();
     }
 
     private void RememberUsed(string id)
@@ -891,8 +1014,6 @@ public partial class MainViewModel : ObservableObject
 
             UsedMcpRows.Add(row);
         }
-
-        ShowUsedEmpty = UsedMcpRows.Count == 0;
     }
 
     [RelayCommand]
@@ -994,17 +1115,31 @@ public partial class MainViewModel : ObservableObject
         }
 
         var have = new HashSet<string>(McpRows.Select(r => r.Id), StringComparer.OrdinalIgnoreCase);
-        var added = 0;
+        var npmAdded = 0;
+        var remoteAdded = 0;
         foreach (var def in extra)
         {
             if (!have.Add(def.Id))
                 continue;
             if (def.Package.Length > 0 && McpRows.Any(r => r.Def.Package.Equals(def.Package, StringComparison.OrdinalIgnoreCase)))
                 continue;
+            var remoteOnly = def.Package.Length == 0 && !string.IsNullOrEmpty(def.RemoteUrl);
+            if (remoteOnly)
+            {
+                if (remoteAdded >= 400)
+                    continue;
+                remoteAdded++;
+            }
+            else if (npmAdded >= 200)
+            {
+                continue;
+            }
+            else
+            {
+                npmAdded++;
+            }
+
             McpRows.Add(new McpRow(def, ToggleMcpAsync, OpenMcpGuide, SetMcpTokenAsync, MuteMcp));
-            added++;
-            if (added >= 200)
-                break;
         }
 
         _registryLoaded = true;
@@ -1061,46 +1196,104 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyMcpFilter()
     {
-        AddedMcpRows.Clear();
-        CatalogMcpRows.Clear();
-        HiddenMcpRows.Clear();
+        FilteredMcpRows.Clear();
+        FilteredUsedRows.Clear();
         var q = (McpSearch ?? "").Trim();
+        foreach (var row in UsedMcpRows)
+        {
+            if (UsedMatches(row, q))
+                FilteredUsedRows.Add(row);
+        }
+
+        var usedEmpty = FilteredUsedRows.Count == 0;
+        ShowUsedHint = McpFilter == "used" && usedEmpty && q.Length == 0;
+        if (McpFilter == "used")
+        {
+            ShowFilterEmpty = usedEmpty && q.Length > 0;
+            return;
+        }
+
         var catalogCap = q.Length == 0 ? 80 : 200;
+        var added = new List<McpRow>();
+        var rest = new List<McpRow>();
         foreach (var row in McpRows)
         {
             if (!McpRegistry.Matches(row.Def with { Hint = row.Hint }, q))
                 continue;
-            if (McpFilter == "key" && row.TokenEnvKey == null)
+            if (McpFilter == "remote" && q.Length == 0 && !IsCurated(row) && !_remoteConfigIds.Contains(row.Id))
                 continue;
-            if (McpFilter == "nokey" && row.TokenEnvKey != null)
+            if (!PassesKind(row))
                 continue;
-            if (McpFilter == "npm" && string.IsNullOrEmpty(row.Def.Package))
+            var hidden = IsHidden(row.Id);
+            var on = row.IsOn;
+            var keep = McpFilter switch
+            {
+                "added" => on,
+                "available" => !on && !hidden,
+                "hidden" => !on && hidden,
+                _ => !hidden
+            };
+            if (!keep)
                 continue;
-            if (McpFilter == "remote" && string.IsNullOrEmpty(row.Def.RemoteUrl))
-                continue;
-            if (row.IsOn)
+            if (on)
             {
                 row.ShowMute = false;
                 row.MuteText = "";
-                AddedMcpRows.Add(row);
+                added.Add(row);
             }
-            else if (IsHidden(row.Id))
+            else if (hidden)
             {
                 row.ShowMute = true;
                 row.MuteText = Loc.Get("McpRestore");
-                HiddenMcpRows.Add(row);
+                rest.Add(row);
             }
-            else if (CatalogMcpRows.Count < catalogCap)
+            else
             {
                 row.ShowMute = true;
                 row.MuteText = Loc.Get("McpHide");
-                CatalogMcpRows.Add(row);
+                rest.Add(row);
             }
         }
 
-        ShowAddedMcps = AddedMcpRows.Count > 0;
-        ShowCatalogMcps = CatalogMcpRows.Count > 0;
-        ShowHiddenMcps = HiddenMcpRows.Count > 0;
+        foreach (var row in added)
+            FilteredMcpRows.Add(row);
+        if (McpFilter == "remote")
+            rest.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.CurrentCultureIgnoreCase));
+        var room = McpFilter is "added" or "hidden" or "remote" ? int.MaxValue : catalogCap;
+        foreach (var row in rest.Take(room))
+            FilteredMcpRows.Add(row);
+        ShowFilterEmpty = FilteredMcpRows.Count == 0;
+    }
+
+    private bool PassesKind(McpRow row) => McpFilter switch
+    {
+        "key" => row.TokenEnvKey != null,
+        "nokey" => row.TokenEnvKey == null,
+        "npm" => !string.IsNullOrEmpty(row.Def.Package),
+        "remote" => IsRemoteRow(row),
+        _ => true
+    };
+
+    private void RefreshRemoteIds(string path)
+    {
+        _remoteConfigIds.Clear();
+        foreach (var id in _opencode.ListRemoteIds(path))
+            _remoteConfigIds.Add(id);
+    }
+
+    private bool IsRemoteRow(McpRow row) =>
+        _remoteConfigIds.Contains(row.Id)
+        || (string.IsNullOrEmpty(row.Def.Package) && !string.IsNullOrEmpty(row.Def.RemoteUrl));
+
+    private static bool IsCurated(McpRow row) => !string.IsNullOrEmpty(row.Def.HintKey);
+
+    private static bool UsedMatches(McpRow row, string q)
+    {
+        if (q.Length == 0)
+            return true;
+        return row.Title.Contains(q, StringComparison.OrdinalIgnoreCase)
+            || row.Id.Contains(q, StringComparison.OrdinalIgnoreCase)
+            || row.Hint.Contains(q, StringComparison.OrdinalIgnoreCase);
     }
 
     private void OpenMcpGuide(McpRow row)
@@ -1198,6 +1391,8 @@ public partial class MainViewModel : ObservableObject
             _ => "mute"
         };
 
+        OpenCodeRunning = IsOpenCodeProcessRunning();
+        OnPropertyChanged(nameof(OpenCodePowerText));
         ShowDownloadDocker = _dockerKind == DockerKind.Missing || _cliMissing;
         ShowStartDocker = _dockerKind == DockerKind.InstalledNotRunning;
         ShowEnableSearxng = _dockerKind == DockerKind.Ok && _searxngKind != SearxngKind.Running && _searxngKind != SearxngKind.Pulling;

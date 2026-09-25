@@ -13,7 +13,8 @@ public enum McpExtra
     Kompas,
     OfficeExcel,
     OfficeWord,
-    OfficePpt
+    OfficePpt,
+    Ufp
 }
 
 public sealed record McpDef(
@@ -86,7 +87,8 @@ public static class McpCatalog
         new("kompas-3d", "КОМПАС-3D", "McpKompasHint", "https://github.com/dwnmf/KOMPAS-3D-MCP-bin", "", McpExtra.Kompas, GuideKey: "GuideKompas", TokenUrl: "https://kompasmcp.ru/"),
         new("office-excel", "Excel", "McpExcelHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeExcel, GuideKey: "GuideOffice"),
         new("office-word", "Word", "McpWordHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeWord, GuideKey: "GuideOffice"),
-        new("office-ppt", "PowerPoint", "McpPptHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficePpt, GuideKey: "GuideOffice")
+        new("office-ppt", "PowerPoint", "McpPptHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficePpt, GuideKey: "GuideOffice"),
+        new("ufp", "UFP", "McpUfpHint", "https://agenticfabricationnetwork.ai/", "", McpExtra.Ufp, RemoteUrl: UfpProxy.Url)
     ];
 
     public static JsonObject CreateNode(string id, AppSettings settings, string? secret = null)
@@ -117,7 +119,10 @@ public static class McpCatalog
         }
 
         if (def.Extra == McpExtra.Kompas)
-            return KompasNode();
+            return KompasNode(settings);
+
+        if (def.Extra == McpExtra.Ufp)
+            return UfpProxy.Node();
 
         if (def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
             return OfficeNode(def.Extra, env);
@@ -153,13 +158,28 @@ public static class McpCatalog
 
     public static string KompasProxyPath() => Path.Combine(KompasDir(), "schema-proxy.mjs");
 
-    private static JsonObject KompasNode()
+    public static string? ResolveStudyExe(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder))
+            return null;
+        var direct = Path.Combine(folder, "kStudy.exe");
+        if (File.Exists(direct))
+            return direct;
+        var bin = Path.Combine(folder, "Bin", "kStudy.exe");
+        return File.Exists(bin) ? bin : null;
+    }
+
+    private static JsonObject KompasNode(AppSettings settings)
     {
         var dir = KompasDir();
-        var node = Local([NodeExe(), KompasProxyPath()], new JsonObject
+        var env = new JsonObject
         {
             ["KOMPAS_MCP_EXE"] = KompasExePath()
-        });
+        };
+        var study = ResolveStudyExe(settings.KompasInstallDir);
+        if (study != null)
+            env["KOMPAS_EXE"] = study;
+        var node = Local([NodeExe(), KompasProxyPath()], env);
         node["cwd"] = dir;
         return node;
     }
@@ -180,7 +200,7 @@ public static class McpCatalog
     }
 
     public static bool NeedsNpx(McpDef def) =>
-        def.Extra is not (McpExtra.Kompas or McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
+        def.Extra is not (McpExtra.Kompas or McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt or McpExtra.Ufp)
         && (def.Package.Length > 0 || def.Extra == McpExtra.Telegram);
 
     public static bool NeedsPython(McpDef def) =>
@@ -225,21 +245,19 @@ public static class McpCatalog
 
     private static JsonObject Remote(McpDef def, string? secret, JsonObject? env)
     {
-        var remote = new JsonObject
-        {
-            ["type"] = "remote",
-            ["url"] = def.RemoteUrl,
-            ["enabled"] = true,
-            ["timeout"] = 60000
-        };
+        JsonObject? headers = null;
         if (!string.IsNullOrEmpty(def.TokenHeader) && !string.IsNullOrEmpty(secret))
+            headers = new JsonObject { [def.TokenHeader] = (def.TokenHeaderPrefix ?? "") + secret };
+        var node = UfpProxy.Node(def.RemoteUrl!, headers);
+        if (headers == null && env != null)
         {
-            var value = (def.TokenHeaderPrefix ?? "") + secret;
-            remote["headers"] = new JsonObject { [def.TokenHeader] = value };
+            var merged = node["environment"] as JsonObject ?? new JsonObject();
+            foreach (var pair in env)
+                merged[pair.Key] = pair.Value?.DeepClone();
+            node["environment"] = merged;
         }
-        else if (env != null)
-            remote["environment"] = env;
-        return remote;
+
+        return node;
     }
 
     private static JsonObject Local(List<string> command, JsonObject? env)

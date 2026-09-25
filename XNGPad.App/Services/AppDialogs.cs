@@ -1,4 +1,5 @@
 using System.Windows;
+using Microsoft.Win32;
 using XNGPad.App.ViewModels;
 using XNGPad.App.Views;
 using XNGPad.Core.Services;
@@ -41,6 +42,16 @@ public sealed class AppDialogs : IAppDialogs
     {
         var w = new TokenWindow(_loc, title, hint, url) { Owner = DialogOwner };
         return w.ShowDialog() == true ? w.Secret : null;
+    }
+
+    public string? AskFolder(string title, string? initialDirectory)
+    {
+        var dlg = new OpenFolderDialog
+        {
+            Title = title,
+            InitialDirectory = string.IsNullOrWhiteSpace(initialDirectory) ? "" : initialDirectory
+        };
+        return dlg.ShowDialog(DialogOwner) == true ? dlg.FolderName : null;
     }
 
     public (string First, string Second)? AskTwoSecrets(string title, string hint1, string hint2, string? url)

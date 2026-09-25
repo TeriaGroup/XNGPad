@@ -31,6 +31,16 @@
   <data name="OpenSearxng" xml:space="preserve"><value>Открыть SearXNG</value></data>
   <data name="ShowLog" xml:space="preserve"><value>Показать лог</value></data>
   <data name="OpenOpenCodeFolder" xml:space="preserve"><value>Открыть папку OpenCode</value></data>
+  <data name="LaunchOpenCode" xml:space="preserve"><value>Запустить OpenCode</value></data>
+  <data name="OcStart" xml:space="preserve"><value>Запуск</value></data>
+  <data name="OcRestart" xml:space="preserve"><value>Рестарт</value></data>
+  <data name="OcQuit" xml:space="preserve"><value>Стоп</value></data>
+  <data name="RestartOpenCode" xml:space="preserve"><value>Перезапустить OpenCode</value></data>
+  <data name="QuitOpenCode" xml:space="preserve"><value>Выключить OpenCode</value></data>
+  <data name="OpenCodeRestarted" xml:space="preserve"><value>OpenCode перезапущен.</value></data>
+  <data name="OpenCodeStopped" xml:space="preserve"><value>OpenCode выключен.</value></data>
+  <data name="OpenCodeNotRunning" xml:space="preserve"><value>OpenCode не запущен.</value></data>
+  <data name="OpenCodeMissingLaunch" xml:space="preserve"><value>OpenCode не найден. Поставь его в «Установка».</value></data>
   <data name="Install" xml:space="preserve"><value>Установка</value></data>
   <data name="InstallHint" xml:space="preserve"><value>Здесь ставятся Node, Docker, OpenCode и MCP. Docker покажет запрос Windows.</value></data>
   <data name="InstallNode" xml:space="preserve"><value>Установить Node.js</value></data>
@@ -319,8 +329,10 @@ redis://:PASSWORD@HOST:6379
   <data name="FilterNoKey" xml:space="preserve"><value>Без ключа</value></data>
   <data name="FilterNpm" xml:space="preserve"><value>npx</value></data>
   <data name="FilterRemote" xml:space="preserve"><value>Удалённые</value></data>
+  <data name="FilterEmpty" xml:space="preserve"><value>Ничего не подходит.</value></data>
   <data name="McpTelegramHint" xml:space="preserve"><value>Читает и пишет чаты Telegram с твоего аккаунта. Нужны API ID и API Hash.</value></data>
   <data name="McpKompasHint" xml:space="preserve"><value>Чертежи и 3D-детали в установленном КОМПАС-3D.</value></data>
+  <data name="McpUfpHint" xml:space="preserve"><value>Котировки 3D-печати, ЧПУ и наклеек. Локальный прокси чинит схему, которую OpenCode иначе отвергает.</value></data>
   <data name="McpExcelHint" xml:space="preserve"><value>Читает и правит книги Excel на этом ПК.</value></data>
   <data name="McpWordHint" xml:space="preserve"><value>Читает и собирает документы Word на этом ПК.</value></data>
   <data name="McpPptHint" xml:space="preserve"><value>Собирает и правит презентации PowerPoint на этом ПК.</value></data>
@@ -330,6 +342,8 @@ redis://:PASSWORD@HOST:6379
   <data name="ErrorKompasDownload" xml:space="preserve"><value>Не скачался kompas-mcp. Проверь интернет и нажми «Добавить» снова.</value></data>
   <data name="ErrorKompasInvite" xml:space="preserve"><value>Инвайт kompasmcp.ru не принят. Нажми «Токен» и вставь код или сам config.json.</value></data>
   <data name="TokenHintKompas" xml:space="preserve"><value>Инвайт с kompasmcp.ru (например invite-…) или весь config.json</value></data>
+  <data name="KompasFolderTitle" xml:space="preserve"><value>Папка КОМПАС-3D (где лежит Bin\kStudy.exe)</value></data>
+  <data name="KompasFolderInvalid" xml:space="preserve"><value>В этой папке нет kStudy.exe. Выбери каталог КОМПАС-3D или его Bin.</value></data>
   <data name="QueueTitle" xml:space="preserve"><value>Очередь загрузок</value></data>
   <data name="QueueQueued" xml:space="preserve"><value>В очереди</value></data>
   <data name="QueueRunning" xml:space="preserve"><value>Загрузка…</value></data>

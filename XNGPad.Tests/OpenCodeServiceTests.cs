@@ -193,9 +193,49 @@ public class OpenCodeServiceTests : IDisposable
         var fetch = root["mcp"]!["fetch"]!["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
         Assert.Contains("mcp-fetch", fetch);
         Assert.DoesNotContain(fetch, x => x.Contains("server-fetch"));
-        Assert.Equal("remote", root["mcp"]!["huggingface"]!["type"]!.GetValue<string>());
-        Assert.Equal("Bearer hf_test", root["mcp"]!["huggingface"]!["headers"]!["Authorization"]!.GetValue<string>());
-        Assert.False(root["mcp"]!["agentic-news"]!["enabled"]!.GetValue<bool>());
+        Assert.Equal("local", root["mcp"]!["huggingface"]!["type"]!.GetValue<string>());
+        Assert.Contains("Bearer hf_test", root["mcp"]!["huggingface"]!["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
+        Assert.Null(root["mcp"]!["agentic-news"]);
         Assert.Equal(120000, root["mcp"]!["memory"]!["timeout"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void RepairMcp_WrapsUfpInsteadOfRemoving()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "ufp": { "type": "remote", "url": "https://agenticfabricationnetwork.ai/mcp", "enabled": true }
+              }
+            }
+            """);
+        Assert.True(_svc.RepairMcp(path));
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var ufp = root["mcp"]!["ufp"]!.AsObject();
+        Assert.Equal("local", ufp["type"]!.GetValue<string>());
+        var cmd = ufp["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Contains("schema-proxy.mjs", cmd[^1]);
+        Assert.False(_svc.RepairMcp(path));
+    }
+
+    [Fact]
+    public void RepairMcp_WrapsRemoteHeaders()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "exa": { "type": "remote", "url": "https://mcp.exa.ai/mcp", "headers": { "x-api-key": "keep" } }
+              }
+            }
+            """);
+        Assert.True(_svc.RepairMcp(path));
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var exa = root["mcp"]!["exa"]!.AsObject();
+        Assert.Equal("local", exa["type"]!.GetValue<string>());
+        Assert.Contains("schema-proxy.mjs", exa["command"]!.AsArray().Last()!.GetValue<string>());
+        Assert.Contains("keep", exa["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
+        Assert.Contains("exa", _svc.ListRemoteIds(path));
     }
 }

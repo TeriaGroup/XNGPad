@@ -184,14 +184,25 @@ public sealed class InstallService
         ZipFile.ExtractToDirectory(zip, extract, overwriteFiles: true);
         var found = Directory.EnumerateFiles(extract, "kompas-mcp.exe", SearchOption.AllDirectories).FirstOrDefault()
             ?? throw new XNGPadException("ErrorKompasDownload");
-        foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(found)!, "*", SearchOption.TopDirectoryOnly))
-        {
-            var dest = Path.Combine(dir, Path.GetFileName(file));
-            File.Copy(file, dest, overwrite: true);
-        }
+        CopyTree(Path.GetDirectoryName(found)!, dir);
 
         if (!File.Exists(exe))
             throw new XNGPadException("ErrorKompasDownload");
+    }
+
+    private static void CopyTree(string source, string dest)
+    {
+        Directory.CreateDirectory(dest);
+        foreach (var file in Directory.EnumerateFiles(source))
+        {
+            var name = Path.GetFileName(file);
+            if (name.Equals("schema-proxy.mjs", StringComparison.OrdinalIgnoreCase))
+                continue;
+            File.Copy(file, Path.Combine(dest, name), overwrite: true);
+        }
+
+        foreach (var sub in Directory.EnumerateDirectories(source))
+            CopyTree(sub, Path.Combine(dest, Path.GetFileName(sub)));
     }
 
     private async Task EnsureKompasConfigAsync(string? inviteOrJson, CancellationToken ct)

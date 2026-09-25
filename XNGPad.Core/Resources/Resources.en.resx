@@ -31,6 +31,16 @@
   <data name="OpenSearxng" xml:space="preserve"><value>Open SearXNG</value></data>
   <data name="ShowLog" xml:space="preserve"><value>Show log</value></data>
   <data name="OpenOpenCodeFolder" xml:space="preserve"><value>Open OpenCode folder</value></data>
+  <data name="LaunchOpenCode" xml:space="preserve"><value>Launch OpenCode</value></data>
+  <data name="OcStart" xml:space="preserve"><value>Start</value></data>
+  <data name="OcRestart" xml:space="preserve"><value>Restart</value></data>
+  <data name="OcQuit" xml:space="preserve"><value>Stop</value></data>
+  <data name="RestartOpenCode" xml:space="preserve"><value>Restart OpenCode</value></data>
+  <data name="QuitOpenCode" xml:space="preserve"><value>Quit OpenCode</value></data>
+  <data name="OpenCodeRestarted" xml:space="preserve"><value>OpenCode restarted.</value></data>
+  <data name="OpenCodeStopped" xml:space="preserve"><value>OpenCode quit.</value></data>
+  <data name="OpenCodeNotRunning" xml:space="preserve"><value>OpenCode is not running.</value></data>
+  <data name="OpenCodeMissingLaunch" xml:space="preserve"><value>OpenCode was not found. Install it from Install.</value></data>
   <data name="Install" xml:space="preserve"><value>Install</value></data>
   <data name="InstallHint" xml:space="preserve"><value>Install Node, Docker, OpenCode, and MCP here. Docker will ask Windows for permission.</value></data>
   <data name="InstallNode" xml:space="preserve"><value>Install Node.js</value></data>
@@ -319,8 +329,10 @@ The password in the URL is a secret.</value></data>
   <data name="FilterNoKey" xml:space="preserve"><value>No key</value></data>
   <data name="FilterNpm" xml:space="preserve"><value>npx</value></data>
   <data name="FilterRemote" xml:space="preserve"><value>Remote</value></data>
+  <data name="FilterEmpty" xml:space="preserve"><value>Nothing matches.</value></data>
   <data name="McpTelegramHint" xml:space="preserve"><value>Reads and writes Telegram chats with your account. Needs API ID and API Hash.</value></data>
   <data name="McpKompasHint" xml:space="preserve"><value>2D drawings and 3D parts in installed KOMPAS-3D.</value></data>
+  <data name="McpUfpHint" xml:space="preserve"><value>Quotes for 3D printing, CNC, and decals. A local proxy fixes the schema OpenCode rejects.</value></data>
   <data name="McpExcelHint" xml:space="preserve"><value>Reads and edits Excel workbooks on this PC.</value></data>
   <data name="McpWordHint" xml:space="preserve"><value>Reads and builds Word documents on this PC.</value></data>
   <data name="McpPptHint" xml:space="preserve"><value>Builds and edits PowerPoint decks on this PC.</value></data>
@@ -330,6 +342,8 @@ The password in the URL is a secret.</value></data>
   <data name="ErrorKompasDownload" xml:space="preserve"><value>Could not download kompas-mcp. Check the internet, then click Add again.</value></data>
   <data name="ErrorKompasInvite" xml:space="preserve"><value>The kompasmcp.ru invite was rejected. Click Token and paste the code or the config.json.</value></data>
   <data name="TokenHintKompas" xml:space="preserve"><value>Invite from kompasmcp.ru (invite-…) or the full config.json</value></data>
+  <data name="KompasFolderTitle" xml:space="preserve"><value>KOMPAS-3D folder (the one that contains Bin\kStudy.exe)</value></data>
+  <data name="KompasFolderInvalid" xml:space="preserve"><value>kStudy.exe is not in this folder. Pick the KOMPAS-3D directory or its Bin folder.</value></data>
   <data name="QueueTitle" xml:space="preserve"><value>Download queue</value></data>
   <data name="QueueQueued" xml:space="preserve"><value>Queued</value></data>
   <data name="QueueRunning" xml:space="preserve"><value>Downloading…</value></data>

@@ -141,10 +141,12 @@ public sealed class OpenCodeService
         changed |= RepairFetchNode(mcp);
         changed |= RepairHuggingFaceNode(mcp);
         changed |= DisableDeadRemote(mcp, "agentic-news");
-        changed |= DisableDeadRemote(mcp, "ufp");
         changed |= EnsureLocalTimeout(mcp);
-        changed |= DisableMissingPackage(mcp, "git", "server-git");
-        changed |= DisableMissingPackage(mcp, "markitdown", "markitdown-mcp");
+        changed |= RemoveMcpId(mcp, "git");
+        changed |= RemoveMcpId(mcp, "markitdown");
+        changed |= RemoveMcpId(mcp, "agentic-news");
+        changed |= RepairRemoteNodes(mcp);
+        changed |= RepairUfpNode(mcp);
         changed |= RepairKompasNode(mcp);
         if (!changed)
             return false;
@@ -219,6 +221,14 @@ public sealed class OpenCodeService
         return true;
     }
 
+    private static bool RemoveMcpId(JsonObject mcp, string id)
+    {
+        if (mcp[id] == null)
+            return false;
+        mcp.Remove(id);
+        return true;
+    }
+
     private static bool DisableMissingPackage(JsonObject mcp, string id, string marker)
     {
         if (mcp[id] is not JsonObject node || node["command"] is not JsonArray cmd)
@@ -232,8 +242,68 @@ public sealed class OpenCodeService
         return true;
     }
 
+    private static bool RepairRemoteNodes(JsonObject mcp)
+    {
+        var changed = false;
+        foreach (var key in mcp.Select(e => e.Key).ToList())
+        {
+            if (mcp[key] is not JsonObject node)
+                continue;
+            if (!string.Equals(node["type"]?.GetValue<string>(), "remote", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var url = node["url"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+            JsonObject? headers = null;
+            if (node["headers"] is JsonObject raw)
+                headers = JsonNode.Parse(raw.ToJsonString())!.AsObject();
+            mcp[key] = UfpProxy.Node(url, headers);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public IReadOnlyList<string> ListRemoteIds(string path)
+    {
+        if (!File.Exists(path))
+            return [];
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8)) is not JsonObject root
+                || root["mcp"] is not JsonObject mcp)
+                return [];
+            var list = new List<string>();
+            foreach (var entry in mcp)
+            {
+                if (entry.Value is not JsonObject node)
+                    continue;
+                if (string.Equals(node["type"]?.GetValue<string>(), "remote", StringComparison.OrdinalIgnoreCase)
+                    || UfpProxy.IsProxied(node))
+                    list.Add(entry.Key);
+            }
+
+            return list;
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool RepairUfpNode(JsonObject mcp)
+    {
+        if (mcp["ufp"] is not JsonObject node)
+            return false;
+        if (UfpProxy.IsProxied(node))
+            return false;
+        mcp["ufp"] = UfpProxy.Node();
+        return true;
+    }
+
     private static bool RepairKompasNode(JsonObject mcp)
     {
+        KompasConfig.EnsureProxy();
         if (mcp["kompas-3d"] is not JsonObject node || node["command"] is not JsonArray cmd)
             return false;
         var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
@@ -241,7 +311,6 @@ public sealed class OpenCodeService
             return false;
         if (!text.Contains("kompas-mcp.exe", StringComparison.OrdinalIgnoreCase))
             return false;
-        KompasConfig.EnsureProxy();
         var exe = McpCatalog.KompasExePath();
         var dir = McpCatalog.KompasDir();
         node["command"] = new JsonArray(NodeExe(), McpCatalog.KompasProxyPath());

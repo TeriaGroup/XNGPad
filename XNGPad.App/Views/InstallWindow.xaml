@@ -120,107 +120,41 @@
                     Height="32" FontSize="13" Padding="12,0"
                     Visibility="{Binding ShowInstallOpenCode, Converter={StaticResource BoolVis}}"/>
         </StackPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-            <Button Content="{Binding Loc[McpAvailable]}" Command="{Binding SetInstallPageCommand}" CommandParameter="catalog">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding InstallIsCatalog}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="{Binding Loc[McpUsed]}" Command="{Binding SetInstallPageCommand}" CommandParameter="used">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding InstallIsUsed}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-        </StackPanel>
-        <TextBox DockPanel.Dock="Top" Text="{Binding McpSearch, UpdateSourceTrigger=PropertyChanged}"
-                 Style="{StaticResource FieldBox}" Padding="8,5" FontSize="13" Margin="0,0,0,6"
-                 ToolTip="{Binding Loc[McpSearch]}"/>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="{Binding Loc[FilterAll]}" Command="{Binding SetMcpFilterCommand}" CommandParameter="all">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FilterIsAll}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="{Binding Loc[FilterKey]}" Command="{Binding SetMcpFilterCommand}" CommandParameter="key">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FilterIsKey}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="{Binding Loc[FilterNoKey]}" Command="{Binding SetMcpFilterCommand}" CommandParameter="nokey">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FilterIsNoKey}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="{Binding Loc[FilterNpm]}" Command="{Binding SetMcpFilterCommand}" CommandParameter="npm">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FilterIsNpm}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-            <Button Content="{Binding Loc[FilterRemote]}" Command="{Binding SetMcpFilterCommand}" CommandParameter="remote">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding FilterIsRemote}" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-        </StackPanel>
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="188"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding McpSearch, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource FieldBox}" Padding="8,5" FontSize="13" Margin="0,0,8,0"
+                     VerticalAlignment="Center" ToolTip="{Binding Loc[McpSearch]}"/>
+            <ComboBox Grid.Column="1" Style="{StaticResource DarkCombo}" FontSize="13"
+                      SelectedIndex="{Binding McpFilterIndex}" VerticalAlignment="Center">
+                <ComboBoxItem Content="{Binding Loc[FilterAll]}"/>
+                <ComboBoxItem Content="{Binding Loc[McpAdded]}"/>
+                <ComboBoxItem Content="{Binding Loc[McpAvailable]}"/>
+                <ComboBoxItem Content="{Binding Loc[McpHidden]}"/>
+                <ComboBoxItem Content="{Binding Loc[McpUsed]}"/>
+                <ComboBoxItem Content="{Binding Loc[FilterKey]}"/>
+                <ComboBoxItem Content="{Binding Loc[FilterNoKey]}"/>
+                <ComboBoxItem Content="{Binding Loc[FilterNpm]}"/>
+                <ComboBoxItem Content="{Binding Loc[FilterRemote]}"/>
+            </ComboBox>
+        </Grid>
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding Banner}" TextWrapping="Wrap" Margin="2,8,2,0"
                    Visibility="{Binding Banner, Converter={StaticResource StrVis}}"
                    Foreground="{Binding BannerLevel, Converter={StaticResource BannerBrush}}"/>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
-                      Visibility="{Binding InstallIsUsed, Converter={StaticResource BoolVis}}">
+        <Grid>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
+                          Visibility="{Binding ShowUsedList, Converter={StaticResource BoolVis}}">
             <StackPanel>
                 <TextBlock Text="{Binding Loc[McpUsedEmpty]}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
                            Margin="0,8,0,8" FontSize="12"
-                           Visibility="{Binding ShowUsedEmpty, Converter={StaticResource BoolVis}}"/>
-                <ItemsControl ItemsSource="{Binding UsedMcpRows}">
+                           Visibility="{Binding ShowUsedHint, Converter={StaticResource BoolVis}}"/>
+                <TextBlock Text="{Binding Loc[FilterEmpty]}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                           Margin="0,8,0,8" FontSize="12"
+                           Visibility="{Binding ShowFilterEmpty, Converter={StaticResource BoolVis}}"/>
+                <ItemsControl ItemsSource="{Binding FilteredUsedRows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{StaticResource CardBrush}" CornerRadius="10" Margin="0,0,10,10" Padding="14,12">
@@ -248,41 +182,16 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
             </StackPanel>
-        </ScrollViewer>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
-                      Visibility="{Binding InstallIsCatalog, Converter={StaticResource BoolVis}}">
-            <StackPanel>
-                <StackPanel Visibility="{Binding ShowAddedMcps, Converter={StaticResource BoolVis}}">
-                    <Button Command="{Binding ToggleAddedMcpsCommand}" Style="{StaticResource FoldHeader}">
-                        <Grid>
-                            <TextBlock Text="{Binding Loc[McpAdded]}" FontWeight="SemiBold" FontSize="15"/>
-                            <TextBlock Text="{Binding AddedMcpsArrow}" HorizontalAlignment="Right" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
-                        </Grid>
-                    </Button>
-                    <ItemsControl Style="{StaticResource McpGrid}" ItemsSource="{Binding AddedMcpRows}"
-                                  Visibility="{Binding AddedMcpsExpanded, Converter={StaticResource BoolVis}}"/>
+            </ScrollViewer>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
+                          Visibility="{Binding ShowCatalogList, Converter={StaticResource BoolVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Loc[FilterEmpty]}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                               Margin="0,8,0,8" FontSize="12"
+                               Visibility="{Binding ShowFilterEmpty, Converter={StaticResource BoolVis}}"/>
+                    <ItemsControl Style="{StaticResource McpGrid}" ItemsSource="{Binding FilteredMcpRows}"/>
                 </StackPanel>
-                <StackPanel Visibility="{Binding ShowCatalogMcps, Converter={StaticResource BoolVis}}">
-                    <Button Command="{Binding ToggleCatalogMcpsCommand}" Style="{StaticResource FoldHeader}">
-                        <Grid>
-                            <TextBlock Text="{Binding Loc[McpAvailable]}" FontWeight="SemiBold" FontSize="15"/>
-                            <TextBlock Text="{Binding CatalogMcpsArrow}" HorizontalAlignment="Right" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
-                        </Grid>
-                    </Button>
-                    <ItemsControl Style="{StaticResource McpGrid}" ItemsSource="{Binding CatalogMcpRows}"
-                                  Visibility="{Binding CatalogMcpsExpanded, Converter={StaticResource BoolVis}}"/>
-                </StackPanel>
-                <StackPanel Visibility="{Binding ShowHiddenMcps, Converter={StaticResource BoolVis}}">
-                    <Button Command="{Binding ToggleHiddenMcpsCommand}" Style="{StaticResource FoldHeader}">
-                        <Grid>
-                            <TextBlock Text="{Binding Loc[McpHidden]}" FontWeight="SemiBold" FontSize="15"/>
-                            <TextBlock Text="{Binding HiddenMcpsArrow}" HorizontalAlignment="Right" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
-                        </Grid>
-                    </Button>
-                    <ItemsControl Style="{StaticResource McpGrid}" ItemsSource="{Binding HiddenMcpRows}"
-                                  Visibility="{Binding HiddenMcpsExpanded, Converter={StaticResource BoolVis}}"/>
-                </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+            </ScrollViewer>
+        </Grid>
     </DockPanel>
 </Window>

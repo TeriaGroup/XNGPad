@@ -12,6 +12,27 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
     <Window.Resources>
+        <Style x:Key="OcSeg" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource FgBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="McpCard">
             <Border Background="{StaticResource CardBrush}" CornerRadius="10" Margin="0,0,0,10">
                 <StackPanel Margin="14,12">
@@ -155,6 +176,7 @@
                            Visibility="{Binding BusyText, Converter={StaticResource StrVis}}"/>
 
                 <Button Content="{Binding Loc[CheckAgain]}" Command="{Binding RefreshCommand}" Style="{StaticResource BarButton}"/>
+                <Button Content="{Binding Loc[Install]}" Command="{Binding OpenInstallCommand}" Style="{StaticResource AccentButton}"/>
                 <Button Content="{Binding Loc[DownloadDocker]}" Command="{Binding DownloadDockerCommand}" Style="{StaticResource AccentButton}"
                         Visibility="{Binding ShowDownloadDocker, Converter={StaticResource BoolVis}}"/>
                 <TextBlock Text="{Binding Loc[DownloadDockerHint]}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="4,0,4,12"
@@ -165,16 +187,24 @@
                         Visibility="{Binding ShowEnableSearxng, Converter={StaticResource BoolVis}}"/>
                 <Button Content="{Binding Loc[DisableSearxng]}" Command="{Binding DisableSearxngCommand}" Style="{StaticResource AccentButton}"
                         Visibility="{Binding ShowDisableSearxng, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[ConnectOpenCode]}" Command="{Binding ConnectOpenCodeCommand}" Style="{StaticResource AccentButton}"
-                        Visibility="{Binding ShowConnect, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[DisconnectOpenCode]}" Command="{Binding DisconnectOpenCodeCommand}" Style="{StaticResource BarButton}"
-                        Visibility="{Binding ShowDisconnect, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[Install]}" Command="{Binding OpenInstallCommand}" Style="{StaticResource AccentButton}"/>
                 <Button Content="{Binding Loc[OpenSearxng]}" Command="{Binding OpenSearxngCommand}" Style="{StaticResource BarButton}"
                         Visibility="{Binding ShowOpenSearxng, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[ShowLog]}" Command="{Binding ShowLogCommand}" Style="{StaticResource BarButton}"
-                        Visibility="{Binding ShowLog, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[OpenOpenCodeFolder]}" Command="{Binding OpenOpenCodeFolderCommand}" Style="{StaticResource BarButton}"/>
+
+                <Button Content="{Binding Loc[ConnectOpenCode]}" Command="{Binding ConnectOpenCodeCommand}" Style="{StaticResource AccentButton}"
+                        Visibility="{Binding ShowConnect, Converter={StaticResource BoolVis}}"/>
+                <Grid Height="44" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Content="{Binding OpenCodePowerText}" Command="{Binding ToggleOpenCodeCommand}"
+                            ToolTip="{Binding OpenCodePowerText}" Style="{StaticResource OcSeg}"
+                            Background="{StaticResource AccentBrush}" Foreground="White"/>
+                    <Button Grid.Column="2" Content="{Binding Loc[OcRestart]}" Command="{Binding RestartOpenCodeCommand}"
+                            ToolTip="{Binding Loc[RestartOpenCode]}" Style="{StaticResource OcSeg}"
+                            Background="{StaticResource BtnBrush}"/>
+                </Grid>
                 <Button Content="{Binding Loc[DownloadNode]}" Command="{Binding DownloadNodeCommand}" Style="{StaticResource AccentButton}"
                         Visibility="{Binding ShowDownloadNode, Converter={StaticResource BoolVis}}"/>
 
@@ -195,6 +225,10 @@
                 <TextBox Text="{Binding EditOpenCodePath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldBox}" Margin="0,0,0,4"/>
                 <TextBlock Text="{Binding DefaultOpenCodePath}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
                 <Button Content="{Binding Loc[OpenOpenCodeFolder]}" Command="{Binding OpenOpenCodeFolderCommand}" Style="{StaticResource BarButton}"/>
+                <Button Content="{Binding Loc[DisconnectOpenCode]}" Command="{Binding DisconnectOpenCodeCommand}" Style="{StaticResource BarButton}"
+                        Visibility="{Binding ShowDisconnect, Converter={StaticResource BoolVis}}"/>
+                <Button Content="{Binding Loc[ShowLog]}" Command="{Binding ShowLogCommand}" Style="{StaticResource BarButton}"
+                        Visibility="{Binding ShowLog, Converter={StaticResource BoolVis}}"/>
                 <TextBlock Text="{Binding Loc[SettingsLanguage]}" Style="{StaticResource FieldLabel}"/>
                 <ComboBox Style="{StaticResource DarkCombo}" SelectedIndex="{Binding EditLanguageIndex, Mode=TwoWay}" Margin="0,0,0,20">
                     <ComboBoxItem Content="{Binding DataContext.Loc[SettingsLanguageOs], RelativeSource={RelativeSource AncestorType=Window}}"/>

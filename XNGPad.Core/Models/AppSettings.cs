@@ -9,6 +9,7 @@ public sealed class AppSettings
     public string Language { get; set; } = "";
     public List<string> HiddenMcpIds { get; set; } = [];
     public List<string> UsedMcpIds { get; set; } = [];
+    public string? KompasInstallDir { get; set; }
 
     public string ResolvedUrl()
     {
@@ -39,7 +40,8 @@ public sealed class AppSettings
             OpenCodeConfigPath = OpenCodeConfigPath,
             Language = Language,
             HiddenMcpIds = [.. HiddenMcpIds],
-            UsedMcpIds = [.. UsedMcpIds]
+            UsedMcpIds = [.. UsedMcpIds],
+            KompasInstallDir = KompasInstallDir
         };
     }
 }

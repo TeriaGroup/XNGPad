@@ -92,9 +92,9 @@ public class McpRegistryTests
     {
         var def = new McpDef("r", "R", "", "", "", RemoteUrl: "https://example.com/mcp");
         var node = McpCatalog.CreateNode(def, new AppSettings());
-        Assert.Equal("remote", node["type"]!.GetValue<string>());
-        Assert.Equal("https://example.com/mcp", node["url"]!.GetValue<string>());
-        Assert.Null(node["command"]);
+        Assert.Equal("local", node["type"]!.GetValue<string>());
+        Assert.Contains("https://example.com/mcp", node["environment"]!["MCP_REMOTE_URL"]!.GetValue<string>());
+        Assert.Contains("schema-proxy.mjs", node["command"]!.AsArray().Last()!.GetValue<string>());
     }
 
     [Fact]
@@ -182,9 +182,9 @@ public class McpRegistryTests
         Assert.Contains("-m", cmd);
         Assert.Contains("mcp-fetch", McpCatalog.CreateNode("fetch", new AppSettings())["command"]!.AsArray().Select(x => x!.GetValue<string>()));
         var hf = McpCatalog.CreateNode(McpCatalog.All.First(x => x.Id == "huggingface"), new AppSettings(), "hf_test");
-        Assert.Equal("remote", hf["type"]!.GetValue<string>());
-        Assert.Equal("https://hf.co/mcp", hf["url"]!.GetValue<string>());
-        Assert.Equal("Bearer hf_test", hf["headers"]!["Authorization"]!.GetValue<string>());
+        Assert.Equal("local", hf["type"]!.GetValue<string>());
+        Assert.Contains("schema-proxy.mjs", hf["command"]!.AsArray().Last()!.GetValue<string>());
+        Assert.Contains("Bearer hf_test", hf["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
         Assert.Contains("excelmcp.server", cmd);
         Assert.Equal("true", node["environment"]!["EXCEL_ENABLE_WRITE"]!.GetValue<string>());
     }
@@ -208,6 +208,18 @@ public class McpRegistryTests
         var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
         Assert.Contains("schema-proxy.mjs", cmd[^1]);
         Assert.EndsWith("kompas-mcp.exe", node["environment"]!["KOMPAS_MCP_EXE"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        Assert.False(McpCatalog.NeedsNpx(def));
+    }
+
+    [Fact]
+    public void CreateNode_Ufp_UsesSchemaProxy()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "ufp");
+        var node = McpCatalog.CreateNode(def, new AppSettings());
+        Assert.Equal("local", node["type"]!.GetValue<string>());
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Contains("schema-proxy.mjs", cmd[^1]);
+        Assert.Contains("agenticfabricationnetwork.ai", node["environment"]!["UFP_MCP_URL"]!.GetValue<string>());
         Assert.False(McpCatalog.NeedsNpx(def));
     }
 }
