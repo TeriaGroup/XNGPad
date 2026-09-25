@@ -17,7 +17,7 @@ public partial class McpRow : ObservableObject
         TokenEnvKey = def.TokenEnvKey;
         Title = def.DisplayName;
         ShowGuide = def.GuideKey != null;
-        ShowToken = def.TokenEnvKey != null;
+        ShowToken = def.TokenEnvKey != null || def.Extra == McpExtra.Kompas;
         ToggleCommand = new AsyncRelayCommand(() => toggle(this));
         OpenGitHubCommand = new RelayCommand(() =>
         {

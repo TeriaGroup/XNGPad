@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text.Json;
 using XNGPad.Core.Models;
 
@@ -95,6 +96,177 @@ public sealed class InstallService
             ct).ConfigureAwait(false);
         if (!IsOpenCodeInstalled() && !result.Success)
             throw new XNGPadException("ErrorInstallFailed") { Detail = DockerError.ShortMessage(result.Combined) };
+    }
+
+    public static IReadOnlyList<string> PythonCommand()
+    {
+        var python = FindPython();
+        if (python != null)
+            return [python];
+        var py = FindPyLauncher();
+        if (py != null)
+            return [py, "-3"];
+        return ["python"];
+    }
+
+    public static string? FindPython()
+    {
+        foreach (var dir in PythonDirs())
+        {
+            foreach (var name in new[] { "python.exe", "python3.exe" })
+            {
+                var p = Path.Combine(dir, name);
+                if (File.Exists(p))
+                    return p;
+            }
+        }
+
+        return null;
+    }
+
+    public static string? FindPyLauncher()
+    {
+        foreach (var dir in ToolDirs())
+        {
+            var p = Path.Combine(dir, "py.exe");
+            if (File.Exists(p))
+                return p;
+        }
+
+        return null;
+    }
+
+    public async Task EnsureOfficeMcpAsync(CancellationToken ct = default)
+    {
+        if (FindPython() == null && FindPyLauncher() == null)
+        {
+            var winget = FindWinget();
+            if (winget == null)
+                throw new XNGPadException("ErrorPythonMissing");
+            var result = await _runner.RunAsync(
+                winget,
+                ["install", "-e", "--id", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"],
+                InstallTimeout,
+                ct).ConfigureAwait(false);
+            if (FindPython() == null && FindPyLauncher() == null && !result.Success)
+                throw new XNGPadException("ErrorPythonMissing") { Detail = DockerError.ShortMessage(result.Combined) };
+        }
+
+        var cmd = PythonCommand().ToList();
+        cmd.AddRange(["-m", "pip", "install", "--user", "mcp-office"]);
+        var pip = await _runner.RunAsync(cmd[0], cmd.Skip(1).ToList(), InstallTimeout, ct).ConfigureAwait(false);
+        if (!pip.Success)
+            throw new XNGPadException("ErrorInstallFailed") { Detail = DockerError.ShortMessage(pip.Combined) };
+    }
+
+    public async Task EnsureKompasMcpAsync(CancellationToken ct = default, string? inviteOrJson = null)
+    {
+        await EnsureKompasExeAsync(ct).ConfigureAwait(false);
+        await EnsureKompasConfigAsync(inviteOrJson, ct).ConfigureAwait(false);
+    }
+
+    public async Task SaveKompasConfigAsync(string inviteOrJson, CancellationToken ct = default)
+    {
+        await EnsureKompasConfigAsync(inviteOrJson, ct).ConfigureAwait(false);
+    }
+
+    private async Task EnsureKompasExeAsync(CancellationToken ct)
+    {
+        var exe = McpCatalog.KompasExePath();
+        if (File.Exists(exe))
+            return;
+        var dir = Path.GetDirectoryName(exe)!;
+        Directory.CreateDirectory(dir);
+        var zipUrl = await KompasZipUrlAsync(ct).ConfigureAwait(false);
+        var zip = Path.Combine(Path.GetTempPath(), "kompas-mcp.zip");
+        await DownloadAsync(zipUrl, zip, ct).ConfigureAwait(false);
+        var extract = Path.Combine(Path.GetTempPath(), "kompas-mcp-" + Guid.NewGuid().ToString("N"));
+        ZipFile.ExtractToDirectory(zip, extract, overwriteFiles: true);
+        var found = Directory.EnumerateFiles(extract, "kompas-mcp.exe", SearchOption.AllDirectories).FirstOrDefault()
+            ?? throw new XNGPadException("ErrorKompasDownload");
+        foreach (var file in Directory.EnumerateFiles(Path.GetDirectoryName(found)!, "*", SearchOption.TopDirectoryOnly))
+        {
+            var dest = Path.Combine(dir, Path.GetFileName(file));
+            File.Copy(file, dest, overwrite: true);
+        }
+
+        if (!File.Exists(exe))
+            throw new XNGPadException("ErrorKompasDownload");
+    }
+
+    private async Task EnsureKompasConfigAsync(string? inviteOrJson, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(inviteOrJson) && KompasConfig.Exists)
+            return;
+        var json = inviteOrJson != null && KompasConfig.LooksLikeConfig(inviteOrJson.Trim())
+            ? inviteOrJson.Trim()
+            : await FetchKompasConfigAsync(string.IsNullOrWhiteSpace(inviteOrJson) ? KompasConfig.DefaultInvite : inviteOrJson.Trim(), ct)
+                .ConfigureAwait(false);
+        KompasConfig.Write(json);
+    }
+
+    private async Task<string> FetchKompasConfigAsync(string invite, CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://kompasmcp.ru/onboard");
+        req.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 XNGPad");
+        req.Headers.TryAddWithoutValidation("Origin", "https://kompasmcp.ru");
+        req.Headers.TryAddWithoutValidation("Referer", "https://kompasmcp.ru/");
+        req.Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["invite_code"] = invite });
+        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        var html = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        var json = KompasConfig.ExtractJson(html);
+        if (!resp.IsSuccessStatusCode || json == null)
+            throw new XNGPadException("ErrorKompasInvite");
+        return json;
+    }
+
+    private async Task<string> KompasZipUrlAsync(CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/dwnmf/KOMPAS-3D-MCP-bin/releases/latest");
+        req.Headers.TryAddWithoutValidation("User-Agent", "XNGPad");
+        req.Headers.TryAddWithoutValidation("Accept", "application/vnd.github+json");
+        using var resp = await _http.SendAsync(req, ct).ConfigureAwait(false);
+        resp.EnsureSuccessStatusCode();
+        var json = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var a in assets.EnumerateArray())
+            {
+                var name = a.TryGetProperty("name", out var n) ? n.GetString() : "";
+                var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : "";
+                if (!string.IsNullOrWhiteSpace(url) && name != null && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    return url;
+            }
+        }
+
+        throw new XNGPadException("ErrorKompasDownload");
+    }
+
+    private static IEnumerable<string> PythonDirs()
+    {
+        var local = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python");
+        var pf = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python");
+        foreach (var root in new[] { local, pf })
+        {
+            if (!Directory.Exists(root))
+                continue;
+            IEnumerable<string> dirs;
+            try
+            {
+                dirs = Directory.EnumerateDirectories(root);
+            }
+            catch
+            {
+                continue;
+            }
+
+            foreach (var d in dirs)
+                yield return d;
+        }
+
+        foreach (var dir in ToolDirs())
+            yield return dir;
     }
 
     public static string? FindWinget()

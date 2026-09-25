@@ -105,6 +105,36 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<McpRow> AddedMcpRows { get; } = [];
     public ObservableCollection<McpRow> CatalogMcpRows { get; } = [];
     public ObservableCollection<McpRow> HiddenMcpRows { get; } = [];
+    public ObservableCollection<DownloadJob> DownloadJobs { get; } = [];
+    public ObservableCollection<McpRow> UsedMcpRows { get; } = [];
+
+    [ObservableProperty] private string installPage = "catalog";
+    [ObservableProperty] private bool showUsedEmpty;
+    public bool InstallIsCatalog => InstallPage == "catalog";
+    public bool InstallIsUsed => InstallPage == "used";
+
+    partial void OnInstallPageChanged(string value)
+    {
+        OnPropertyChanged(nameof(InstallIsCatalog));
+        OnPropertyChanged(nameof(InstallIsUsed));
+    }
+
+    [RelayCommand]
+    private void SetInstallPage(string? page)
+    {
+        if (page is "catalog" or "used")
+            InstallPage = page;
+    }
+
+    private readonly Dictionary<string, McpRow> _extraUsed = new(StringComparer.OrdinalIgnoreCase);
+
+    [ObservableProperty] private bool showDownloadQueue;
+    [ObservableProperty] private bool queueBusy;
+
+    public bool ShowInstallProgress => IsBusy || QueueBusy;
+
+    private readonly Queue<(McpRow Row, string? Secret, string? Secret2, DownloadJob Job)> _mcpQueue = new();
+    private int _mcpPump;
 
     [ObservableProperty] private bool showAddedMcps;
     [ObservableProperty] private bool showCatalogMcps;
@@ -178,8 +208,11 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanRun() => !IsBusy;
 
+    partial void OnQueueBusyChanged(bool value) => OnPropertyChanged(nameof(ShowInstallProgress));
+
     partial void OnIsBusyChanged(bool value)
     {
+        OnPropertyChanged(nameof(ShowInstallProgress));
         RefreshCommand.NotifyCanExecuteChanged();
         DownloadDockerCommand.NotifyCanExecuteChanged();
         StartDockerCommand.NotifyCanExecuteChanged();
@@ -493,18 +526,23 @@ public partial class MainViewModel : ObservableObject
         {
             await RunBusyAsync("BusyLoadingMcps", async ct =>
             {
-                await EnsureRegistryAsync(ct);
-                await FillRuHintsAsync(ct, TimeSpan.FromSeconds(20));
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                cts.CancelAfter(TimeSpan.FromSeconds(12));
+                try
+                {
+                    await EnsureRegistryAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                }
+
                 RefreshInstallStatus();
             });
         }
         else
-        {
-            await FillRuHintsAsync(Lifetime.Token, TimeSpan.FromSeconds(12));
             RefreshInstallStatus();
-        }
 
-        _ = FillRuHintsAsync(Lifetime.Token, null);
+        _ = FillRuHintsAsync(Lifetime.Token, TimeSpan.FromSeconds(25));
         IsInstallOpen = true;
         _dialogs.ShowInstall();
         IsInstallOpen = false;
@@ -556,7 +594,7 @@ public partial class MainViewModel : ObservableObject
     private async Task ToggleMcpAsync(McpRow row)
     {
         var remoteOnly = string.IsNullOrEmpty(row.Def.Package) && !string.IsNullOrEmpty(row.Def.RemoteUrl);
-        if (!remoteOnly && !_install.IsNodeInstalled() && !_node.IsNpxAvailable())
+        if (!remoteOnly && McpCatalog.NeedsNpx(row.Def) && !_install.IsNodeInstalled() && !_node.IsNpxAvailable())
         {
             Banner = Loc.Get("NeedNodeFirst");
             BannerLevel = "warn";
@@ -565,7 +603,151 @@ public partial class MainViewModel : ObservableObject
 
         var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
         string? secret = null;
-        if (!_opencode.HasMcp(path, row.Id) && row.TokenEnvKey != null)
+        string? secret2 = null;
+        if (!_opencode.HasMcp(path, row.Id) && row.Def.TokenEnvKey2 != null)
+        {
+            var pair = _dialogs.AskTwoSecrets(row.Id, Loc.Get("TokenHintTelegramId"), Loc.Get("TokenHintTelegramHash"), row.TokenUrl);
+            if (pair == null)
+                return;
+            secret = pair.Value.First;
+            secret2 = pair.Value.Second;
+        }
+        else if (!_opencode.HasMcp(path, row.Id) && row.TokenEnvKey != null)
+        {
+            secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHint"), row.TokenUrl);
+            if (secret == null)
+                return;
+        }
+
+        if (_opencode.HasMcp(path, row.Id))
+        {
+            _opencode.RemoveMcp(path, row.Id);
+            RefreshInstallStatus();
+            Banner = Loc.Get("RestartOpenCodeHint");
+            BannerLevel = "ok";
+            return;
+        }
+
+        EnqueueMcp(row, secret, secret2);
+    }
+
+    private void EnqueueMcp(McpRow row, string? secret, string? secret2)
+    {
+        lock (_mcpQueue)
+        {
+            if (_mcpQueue.Any(x => x.Row.Id == row.Id))
+                return;
+        }
+
+        if (DownloadJobs.Any(j => j.Id == row.Id && j.IsActive))
+            return;
+        var job = new DownloadJob(row.Id, row.Title, Loc.Get("QueueQueued"));
+        DownloadJobs.Add(job);
+        ShowDownloadQueue = true;
+        lock (_mcpQueue)
+            _mcpQueue.Enqueue((row, secret, secret2, job));
+        _ = PumpMcpQueueAsync();
+    }
+
+    private async Task PumpMcpQueueAsync()
+    {
+        if (Interlocked.Exchange(ref _mcpPump, 1) == 1)
+            return;
+        QueueBusy = true;
+        try
+        {
+            while (true)
+            {
+                (McpRow Row, string? Secret, string? Secret2, DownloadJob Job) item;
+                lock (_mcpQueue)
+                {
+                    if (_mcpQueue.Count == 0)
+                        break;
+                    item = _mcpQueue.Dequeue();
+                }
+
+                item.Job.StatusText = Loc.Get("QueueRunning");
+                try
+                {
+                    var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+                    if (McpCatalog.NeedsKompasBin(item.Row.Def))
+                        await _install.EnsureKompasMcpAsync(Lifetime.Token);
+                    if (McpCatalog.NeedsPython(item.Row.Def))
+                        await _install.EnsureOfficeMcpAsync(Lifetime.Token);
+                    UnhideMcpId(item.Row.Id);
+                    _opencode.UpsertMcp(path, item.Row.Id, McpCatalog.CreateNode(item.Row.Def, _settings, item.Secret, item.Secret2));
+                    RememberUsed(item.Row.Id);
+                    item.Job.StatusText = Loc.Get("QueueDone");
+                    item.Job.IsActive = false;
+                    Banner = Loc.Get(item.Secret != null ? "TokenSaved" : "RestartOpenCodeHint");
+                    BannerLevel = "ok";
+                }
+                catch (Exception ex)
+                {
+                    item.Job.StatusText = Loc.Get("QueueError");
+                    item.Job.IsActive = false;
+                    ShowError(ex);
+                }
+
+                RefreshInstallStatus();
+                TrimDownloadJobs();
+            }
+        }
+        finally
+        {
+            QueueBusy = false;
+            Interlocked.Exchange(ref _mcpPump, 0);
+            var more = false;
+            lock (_mcpQueue)
+                more = _mcpQueue.Count > 0;
+            if (more)
+                _ = PumpMcpQueueAsync();
+        }
+    }
+
+    private void TrimDownloadJobs()
+    {
+        while (DownloadJobs.Count > 6)
+        {
+            var first = DownloadJobs[0];
+            if (first.IsActive)
+                break;
+            DownloadJobs.RemoveAt(0);
+        }
+
+        ShowDownloadQueue = DownloadJobs.Count > 0;
+    }
+
+    private async Task SetMcpTokenAsync(McpRow row)
+    {
+        string? secret;
+        string? secret2 = null;
+        if (row.Def.Extra == McpExtra.Kompas)
+        {
+            secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHintKompas"), row.TokenUrl);
+            if (secret == null)
+                return;
+            await RunBusyAsync("BusyInstallingMcp", async ct =>
+            {
+                await _install.SaveKompasConfigAsync(secret, ct);
+                var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+                _opencode.UpsertMcp(path, row.Id, McpCatalog.CreateNode(row.Def, _settings));
+                RefreshInstallStatus();
+                Banner = Loc.Get("TokenSaved");
+                BannerLevel = "ok";
+            });
+            return;
+        }
+
+        if (row.Def.TokenEnvKey2 != null)
+        {
+            var pair = _dialogs.AskTwoSecrets(row.Id, Loc.Get("TokenHintTelegramId"), Loc.Get("TokenHintTelegramHash"), row.TokenUrl);
+            if (pair == null)
+                return;
+            secret = pair.Value.First;
+            secret2 = pair.Value.Second;
+        }
+        else
         {
             secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHint"), row.TokenUrl);
             if (secret == null)
@@ -574,30 +756,8 @@ public partial class MainViewModel : ObservableObject
 
         await RunBusyAsync("BusyInstallingMcp", async _ =>
         {
-            if (_opencode.HasMcp(path, row.Id))
-                _opencode.RemoveMcp(path, row.Id);
-            else
-            {
-                UnhideMcpId(row.Id);
-                _opencode.UpsertMcp(path, row.Id, McpCatalog.CreateNode(row.Def, _settings, secret));
-            }
-
-            RefreshInstallStatus();
-            await LoadStatusAsync(Lifetime.Token);
-            Banner = Loc.Get(secret != null ? "TokenSaved" : "RestartOpenCodeHint");
-            BannerLevel = "ok";
-        });
-    }
-
-    private async Task SetMcpTokenAsync(McpRow row)
-    {
-        var secret = _dialogs.AskSecret(row.Id, Loc.Get("TokenHint"), row.TokenUrl);
-        if (secret == null)
-            return;
-        await RunBusyAsync("BusyInstallingMcp", async _ =>
-        {
             var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
-            _opencode.UpsertMcp(path, row.Id, McpCatalog.CreateNode(row.Def, _settings, secret));
+            _opencode.UpsertMcp(path, row.Id, McpCatalog.CreateNode(row.Def, _settings, secret, secret2));
             RefreshInstallStatus();
             Banner = Loc.Get("TokenSaved");
             BannerLevel = "ok";
@@ -628,7 +788,8 @@ public partial class MainViewModel : ObservableObject
             SearxngUrl = url.TrimEnd('/'),
             OpenCodeConfigPath = string.IsNullOrWhiteSpace(EditOpenCodePath) ? null : EditOpenCodePath.Trim(),
             Language = lang,
-            HiddenMcpIds = [.. _settings.HiddenMcpIds]
+            HiddenMcpIds = [.. _settings.HiddenMcpIds],
+            UsedMcpIds = [.. _settings.UsedMcpIds]
         };
         _settingsService.Save(_settings);
         ApplyLanguage(SettingsService.ResolveLanguage(_settings));
@@ -662,6 +823,14 @@ public partial class MainViewModel : ObservableObject
         ShowInstallDocker = !dockerOk;
         ShowInstallOpenCode = !ocOk;
         var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+        try
+        {
+            _opencode.RepairMcp(path);
+        }
+        catch
+        {
+        }
+
         foreach (var row in McpRows)
         {
             row.Hint = McpRegistry.FormatHint(row.Def, Loc, _hintRu);
@@ -674,6 +843,115 @@ public partial class MainViewModel : ObservableObject
         }
 
         ApplyMcpFilter();
+        RebuildUsed(path);
+    }
+
+    private void RememberUsed(string id)
+    {
+        _settings.UsedMcpIds ??= [];
+        if (_settings.UsedMcpIds.Contains(id))
+            return;
+        _settings.UsedMcpIds.Add(id);
+        _settingsService.Save(_settings);
+    }
+
+    private void RebuildUsed(string path)
+    {
+        _settings.UsedMcpIds ??= [];
+        var changed = false;
+        foreach (var id in _opencode.ListMcpIds(path))
+        {
+            if (_settings.UsedMcpIds.Contains(id))
+                continue;
+            _settings.UsedMcpIds.Add(id);
+            changed = true;
+        }
+
+        if (changed)
+            _settingsService.Save(_settings);
+
+        UsedMcpRows.Clear();
+        foreach (var id in _settings.UsedMcpIds.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+        {
+            var row = McpRows.FirstOrDefault(r => r.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (row == null)
+            {
+                if (!_extraUsed.TryGetValue(id, out row))
+                {
+                    row = new McpRow(new McpDef(id, id, "", "", ""), ToggleMcpAsync, OpenMcpGuide, SetMcpTokenAsync, MuteMcp);
+                    _extraUsed[id] = row;
+                }
+
+                var on = _opencode.HasMcp(path, id);
+                row.IsOn = on;
+                row.Hint = id;
+                row.StatusText = Loc.Get(on ? "StatusInstalled" : "StatusMissing");
+                row.ActionText = Loc.Get("McpForget");
+            }
+
+            UsedMcpRows.Add(row);
+        }
+
+        ShowUsedEmpty = UsedMcpRows.Count == 0;
+    }
+
+    [RelayCommand]
+    private void ForgetMcp(McpRow? row)
+    {
+        if (row == null)
+            return;
+        var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+        try
+        {
+            if (_opencode.HasMcp(path, row.Id))
+                _opencode.RemoveMcp(path, row.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex);
+            return;
+        }
+
+        _settings.UsedMcpIds?.Remove(row.Id);
+        _settingsService.Save(_settings);
+        RefreshInstallStatus();
+    }
+
+    [RelayCommand]
+    private void OpenKeys()
+    {
+        var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+        var rows = _opencode.ListSecrets(path).Select(s => new KeyRow(
+            s.Id,
+            TitleFor(s.Id),
+            s.Key,
+            s.Place,
+            s.Value,
+            UrlFor(s.Id))).ToList();
+        _dialogs.ShowKeys(rows, (row, value) =>
+        {
+            _opencode.SetSecret(path, row.Id, row.KeyName, row.Place, value);
+            Banner = Loc.Get("KeysSaved");
+            BannerLevel = "ok";
+        });
+    }
+
+    private string TitleFor(string id) =>
+        McpCatalog.All.FirstOrDefault(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? id;
+
+    private static string? UrlFor(string id)
+    {
+        var def = McpCatalog.All.FirstOrDefault(x => x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(def?.TokenUrl))
+            return def.TokenUrl;
+        return id.ToLowerInvariant() switch
+        {
+            "exa" => "https://dashboard.exa.ai/api-keys",
+            "context7" => "https://context7.com/dashboard",
+            "huggingface" => "https://huggingface.co/settings/tokens",
+            "github" => "https://github.com/settings/tokens",
+            _ => null
+        };
     }
 
     private void MuteMcp(McpRow row)
@@ -725,11 +1003,11 @@ public partial class MainViewModel : ObservableObject
                 continue;
             McpRows.Add(new McpRow(def, ToggleMcpAsync, OpenMcpGuide, SetMcpTokenAsync, MuteMcp));
             added++;
-            if (added >= 800)
+            if (added >= 200)
                 break;
         }
 
-        _registryLoaded = extra.Count > 0;
+        _registryLoaded = true;
     }
 
     private string HintCachePath =>
@@ -755,9 +1033,9 @@ public partial class MainViewModel : ObservableObject
             var texts = McpRows
                 .Where(r => string.IsNullOrEmpty(r.HintKey) && !string.IsNullOrWhiteSpace(r.Def.Hint))
                 .Select(r => r.Def.Hint!)
+                .Take(40)
                 .ToList();
-            var progress = new Progress<Dictionary<string, string>>(ApplyHintMap);
-            var map = await _install.TranslateHintsToRuAsync(texts, HintCachePath, token, progress);
+            var map = await _install.TranslateHintsToRuAsync(texts, HintCachePath, token);
             ApplyHintMap(map);
         }
         catch (OperationCanceledException)
@@ -787,7 +1065,7 @@ public partial class MainViewModel : ObservableObject
         CatalogMcpRows.Clear();
         HiddenMcpRows.Clear();
         var q = (McpSearch ?? "").Trim();
-        var catalogCap = q.Length == 0 ? 200 : 400;
+        var catalogCap = q.Length == 0 ? 80 : 200;
         foreach (var row in McpRows)
         {
             if (!McpRegistry.Matches(row.Def with { Hint = row.Hint }, q))

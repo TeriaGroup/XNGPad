@@ -36,13 +36,27 @@ public static class McpRegistry
         var list = new List<McpDef>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         string? cursor = null;
-        for (var page = 0; page < 30; page++)
+        for (var page = 0; page < 8; page++)
         {
-            ct.ThrowIfCancellationRequested();
+            if (ct.IsCancellationRequested)
+                break;
             var url = cursor == null ? Api : Api + "&cursor=" + Uri.EscapeDataString(cursor);
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.TryAddWithoutValidation("User-Agent", "XNGPad");
-            using var resp = await http.SendAsync(req, ct).ConfigureAwait(false);
+            using var pageCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            pageCts.CancelAfter(TimeSpan.FromSeconds(8));
+            HttpResponseMessage resp;
+            try
+            {
+                resp = await http.SendAsync(req, pageCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            using (resp)
+            {
             if (!resp.IsSuccessStatusCode)
                 break;
             var json = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -64,6 +78,7 @@ public static class McpRegistry
             cursor = NextCursor(json);
             if (cursor == null)
                 break;
+            }
         }
 
         return list;
@@ -161,6 +176,7 @@ public static class McpRegistry
         var missing = texts
             .Where(t => !string.IsNullOrWhiteSpace(t) && t.Length > 2 && !map.ContainsKey(t) && !HasCyrillic(t))
             .Distinct(StringComparer.Ordinal)
+            .Take(40)
             .ToList();
         if (missing.Count == 0)
             return map;
@@ -181,7 +197,7 @@ public static class McpRegistry
                     lock (map)
                     {
                         map[t] = ru.Trim();
-                        if (Interlocked.Increment(ref done) % 8 == 0)
+                        if (progress != null && Interlocked.Increment(ref done) % 40 == 0)
                             snap = new Dictionary<string, string>(map, StringComparer.Ordinal);
                     }
 
@@ -369,24 +385,10 @@ public static class McpRegistry
     private static async Task<string?> TranslateOneAsync(HttpClient http, string text, CancellationToken ct)
     {
         var q = text.Length > 400 ? text[..400] : text;
-        var ru = await GetTranslateAsync(
+        return await GetTranslateAsync(
             http,
             "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q=" + Uri.EscapeDataString(q),
             ParseGoogleTranslate,
-            ct).ConfigureAwait(false);
-        if (ru != null)
-            return ru;
-        ru = await GetTranslateAsync(
-            http,
-            "https://api.mymemory.translated.net/get?q=" + Uri.EscapeDataString(q) + "&langpair=en|ru",
-            ParseMyMemory,
-            ct).ConfigureAwait(false);
-        if (ru != null)
-            return ru;
-        return await GetTranslateAsync(
-            http,
-            "https://lingva.ml/api/v1/en/ru/" + Uri.EscapeDataString(q),
-            ParseLingva,
             ct).ConfigureAwait(false);
     }
 
@@ -406,7 +408,7 @@ public static class McpRegistry
         CancellationToken ct)
     {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        cts.CancelAfter(TimeSpan.FromSeconds(8));
+        cts.CancelAfter(TimeSpan.FromSeconds(4));
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, url);

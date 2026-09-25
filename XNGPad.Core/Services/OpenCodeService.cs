@@ -6,6 +6,8 @@ using XNGPad.Core.Models;
 
 namespace XNGPad.Core.Services;
 
+public sealed record McpSecret(string Id, string Key, string Value, string Place);
+
 public sealed class OpenCodeService
 {
     private static readonly JsonSerializerOptions WriteOptions = new()
@@ -109,6 +111,222 @@ public sealed class OpenCodeService
         mcp[id] = node;
         AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
         return backupPath;
+    }
+
+    public IReadOnlyList<string> ListMcpIds(string path)
+    {
+        if (!File.Exists(path))
+            return [];
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(path, Encoding.UTF8)) is not JsonObject root
+                || root["mcp"] is not JsonObject mcp)
+                return [];
+            return mcp.Select(x => x.Key).Where(x => x.Length > 0).ToList();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    public bool RepairMcp(string path)
+    {
+        if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root == null)
+            return false;
+        if (root["mcp"] is not JsonObject mcp)
+            return false;
+        var changed = false;
+        changed |= RepairTelegramNode(mcp);
+        changed |= RepairFetchNode(mcp);
+        changed |= RepairHuggingFaceNode(mcp);
+        changed |= DisableDeadRemote(mcp, "agentic-news");
+        changed |= DisableDeadRemote(mcp, "ufp");
+        changed |= EnsureLocalTimeout(mcp);
+        if (!changed)
+            return false;
+        WriteBackup(path);
+        AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
+        return true;
+    }
+
+    private static bool RepairTelegramNode(JsonObject mcp)
+    {
+        if (mcp["telegram"] is not JsonObject node || node["command"] is not JsonArray cmd)
+            return false;
+        var hasPkg = cmd.Any(x => (x?.GetValue<string>() ?? "").Contains("mcp-telegram", StringComparison.OrdinalIgnoreCase));
+        if (!hasPkg)
+            return false;
+        var changed = false;
+        for (var i = cmd.Count - 1; i >= 0; i--)
+        {
+            if (!string.Equals(cmd[i]?.GetValue<string>(), "start", StringComparison.OrdinalIgnoreCase))
+                continue;
+            cmd.RemoveAt(i);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static bool RepairFetchNode(JsonObject mcp)
+    {
+        if (mcp["fetch"] is not JsonObject node || node["command"] is not JsonArray cmd)
+            return false;
+        var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
+        if (!text.Contains("server-fetch", StringComparison.OrdinalIgnoreCase))
+            return false;
+        node["command"] = new JsonArray("npx", "-y", "mcp-fetch");
+        node["timeout"] = 120000;
+        node["enabled"] = true;
+        return true;
+    }
+
+    private static bool RepairHuggingFaceNode(JsonObject mcp)
+    {
+        if (mcp["huggingface"] is not JsonObject node)
+            return false;
+        if (node["type"]?.GetValue<string>() == "remote" && (node["url"]?.GetValue<string>() ?? "").Contains("hf.co/mcp", StringComparison.OrdinalIgnoreCase))
+            return false;
+        string? token = null;
+        if (node["environment"] is JsonObject env && env["HF_TOKEN"] is JsonValue tok)
+            token = tok.GetValue<string>();
+        var remote = new JsonObject
+        {
+            ["type"] = "remote",
+            ["url"] = "https://hf.co/mcp",
+            ["enabled"] = true,
+            ["timeout"] = 60000
+        };
+        if (!string.IsNullOrWhiteSpace(token))
+            remote["headers"] = new JsonObject { ["Authorization"] = "Bearer " + token };
+        mcp["huggingface"] = remote;
+        return true;
+    }
+
+    private static bool DisableDeadRemote(JsonObject mcp, string id)
+    {
+        if (mcp[id] is not JsonObject node)
+            return false;
+        if (node["type"]?.GetValue<string>() != "remote")
+            return false;
+        if (node["enabled"] is JsonValue en && en.TryGetValue<bool>(out var on) && !on)
+            return false;
+        node["enabled"] = false;
+        return true;
+    }
+
+    private static bool EnsureLocalTimeout(JsonObject mcp)
+    {
+        var changed = false;
+        foreach (var entry in mcp)
+        {
+            if (entry.Value is not JsonObject node)
+                continue;
+            if (node["type"]?.GetValue<string>() != "local")
+                continue;
+            if (node["timeout"] != null)
+                continue;
+            node["timeout"] = 120000;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public bool RepairTelegram(string path)
+    {
+        if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root == null)
+            return false;
+        if (root["mcp"] is not JsonObject mcp || mcp["telegram"] is not JsonObject node)
+            return false;
+        if (node["command"] is not JsonArray cmd)
+            return false;
+        var hasPkg = cmd.Any(x => (x?.GetValue<string>() ?? "").Contains("mcp-telegram", StringComparison.OrdinalIgnoreCase));
+        if (!hasPkg)
+            return false;
+        var changed = false;
+        for (var i = cmd.Count - 1; i >= 0; i--)
+        {
+            if (!string.Equals(cmd[i]?.GetValue<string>(), "start", StringComparison.OrdinalIgnoreCase))
+                continue;
+            cmd.RemoveAt(i);
+            changed = true;
+        }
+
+        if (!changed)
+            return false;
+        WriteBackup(path);
+        AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
+        return true;
+    }
+
+    public IReadOnlyList<McpSecret> ListSecrets(string path)
+    {
+        var list = new List<McpSecret>();
+        if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root?["mcp"] is not JsonObject mcp)
+            return list;
+        foreach (var entry in mcp)
+        {
+            if (entry.Value is not JsonObject node)
+                continue;
+            CollectSecrets(list, entry.Key, "environment", node["environment"] as JsonObject);
+            CollectSecrets(list, entry.Key, "headers", node["headers"] as JsonObject);
+        }
+
+        return list;
+    }
+
+    public void SetSecret(string path, string id, string key, string place, string value)
+    {
+        if (place is not ("environment" or "headers"))
+            throw new XNGPadException("ErrorGeneric");
+        if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root == null)
+            throw new XNGPadException("ErrorOpenCodeUnavailable", path);
+        if (root["mcp"] is not JsonObject mcp || mcp[id] is not JsonObject node)
+            throw new XNGPadException("ErrorGeneric");
+        var bag = node[place] as JsonObject;
+        if (bag == null)
+        {
+            bag = new JsonObject();
+            node[place] = bag;
+        }
+
+        WriteBackup(path);
+        bag[key] = value;
+        AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
+    }
+
+    private static void CollectSecrets(List<McpSecret> list, string id, string place, JsonObject? bag)
+    {
+        if (bag == null)
+            return;
+        foreach (var pair in bag)
+        {
+            if (pair.Value is not JsonValue val || !val.TryGetValue<string>(out var text))
+                continue;
+            if (string.IsNullOrWhiteSpace(text) || !LooksLikeSecret(pair.Key, text))
+                continue;
+            list.Add(new McpSecret(id, pair.Key, text, place));
+        }
+    }
+
+    private static bool LooksLikeSecret(string key, string value)
+    {
+        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (key.EndsWith("_ROOTS", StringComparison.OrdinalIgnoreCase)
+            || key.EndsWith("_ENABLE_WRITE", StringComparison.OrdinalIgnoreCase)
+            || key.Equals("SEARXNG_URL", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return key.Contains("KEY", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("TOKEN", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("SECRET", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("HASH", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("PASSWORD", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("API_ID", StringComparison.OrdinalIgnoreCase)
+            || key.Contains("AUTH", StringComparison.OrdinalIgnoreCase);
     }
 
     public string RemoveMcp(string path, string id)

@@ -1,4 +1,5 @@
 using System.Windows;
+using XNGPad.App.ViewModels;
 using XNGPad.App.Views;
 using XNGPad.Core.Services;
 
@@ -40,6 +41,20 @@ public sealed class AppDialogs : IAppDialogs
     {
         var w = new TokenWindow(_loc, title, hint, url) { Owner = DialogOwner };
         return w.ShowDialog() == true ? w.Secret : null;
+    }
+
+    public (string First, string Second)? AskTwoSecrets(string title, string hint1, string hint2, string? url)
+    {
+        var w = new TokenWindow(_loc, title, hint1, url, hint2) { Owner = DialogOwner };
+        if (w.ShowDialog() != true || string.IsNullOrEmpty(w.Secret) || string.IsNullOrEmpty(w.Secret2))
+            return null;
+        return (w.Secret, w.Secret2);
+    }
+
+    public void ShowKeys(IReadOnlyList<KeyRow> rows, Action<KeyRow, string> save)
+    {
+        var w = new KeysWindow(_loc, rows, save) { Owner = DialogOwner };
+        w.ShowDialog();
     }
 
     public void ShowInstall()

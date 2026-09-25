@@ -16,7 +16,18 @@
                      Foreground="{StaticResource FgBrush}"
                      BorderBrush="#FF2E3038"
                      BorderThickness="1"
-                     Margin="0,0,0,16"/>
+                     Margin="0,0,0,12"/>
+        <TextBlock x:Name="HintText2" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,12"
+                   Visibility="Collapsed"/>
+        <PasswordBox x:Name="SecretBox2"
+                     FontSize="14"
+                     Padding="10,8"
+                     Background="{StaticResource InputBrush}"
+                     Foreground="{StaticResource FgBrush}"
+                     BorderBrush="#FF2E3038"
+                     BorderThickness="1"
+                     Margin="0,0,0,16"
+                     Visibility="Collapsed"/>
         <Button x:Name="SiteButton" Style="{StaticResource BarButton}" Click="Site_Click"/>
         <Grid>
             <Grid.ColumnDefinitions>

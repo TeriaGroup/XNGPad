@@ -319,4 +319,63 @@ redis://:PASSWORD@HOST:6379
   <data name="FilterNoKey" xml:space="preserve"><value>Без ключа</value></data>
   <data name="FilterNpm" xml:space="preserve"><value>npx</value></data>
   <data name="FilterRemote" xml:space="preserve"><value>Удалённые</value></data>
+  <data name="McpTelegramHint" xml:space="preserve"><value>Читает и пишет чаты Telegram с твоего аккаунта. Нужны API ID и API Hash.</value></data>
+  <data name="McpKompasHint" xml:space="preserve"><value>Чертежи и 3D-детали в установленном КОМПАС-3D.</value></data>
+  <data name="McpExcelHint" xml:space="preserve"><value>Читает и правит книги Excel на этом ПК.</value></data>
+  <data name="McpWordHint" xml:space="preserve"><value>Читает и собирает документы Word на этом ПК.</value></data>
+  <data name="McpPptHint" xml:space="preserve"><value>Собирает и правит презентации PowerPoint на этом ПК.</value></data>
+  <data name="TokenHintTelegramId" xml:space="preserve"><value>API ID (число) с my.telegram.org/apps</value></data>
+  <data name="TokenHintTelegramHash" xml:space="preserve"><value>API Hash (строка) с той же страницы</value></data>
+  <data name="ErrorPythonMissing" xml:space="preserve"><value>Нужен Python 3.11+. Поставь его или включи winget, затем снова нажми «Добавить».</value></data>
+  <data name="ErrorKompasDownload" xml:space="preserve"><value>Не скачался kompas-mcp. Проверь интернет и нажми «Добавить» снова.</value></data>
+  <data name="ErrorKompasInvite" xml:space="preserve"><value>Инвайт kompasmcp.ru не принят. Нажми «Токен» и вставь код или сам config.json.</value></data>
+  <data name="TokenHintKompas" xml:space="preserve"><value>Инвайт с kompasmcp.ru (например invite-…) или весь config.json</value></data>
+  <data name="QueueTitle" xml:space="preserve"><value>Очередь загрузок</value></data>
+  <data name="QueueQueued" xml:space="preserve"><value>В очереди</value></data>
+  <data name="QueueRunning" xml:space="preserve"><value>Загрузка…</value></data>
+  <data name="QueueDone" xml:space="preserve"><value>Готово</value></data>
+  <data name="QueueError" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="McpUsed" xml:space="preserve"><value>Использованные</value></data>
+  <data name="McpForget" xml:space="preserve"><value>Удалить</value></data>
+  <data name="McpUsedEmpty" xml:space="preserve"><value>Пока пусто. Сюда сами попадают MCP, которые ты добавлял.</value></data>
+  <data name="ReissueKeys" xml:space="preserve"><value>Ключи</value></data>
+  <data name="KeysTitle" xml:space="preserve"><value>Перевыпустить ключи</value></data>
+  <data name="KeysHint" xml:space="preserve"><value>Ключи из opencode.json и сайты, где их перевыпустить. Вставь новый и нажми «Записать». В чат не копируй.</value></data>
+  <data name="KeysOpenAll" xml:space="preserve"><value>Открыть все сайты</value></data>
+  <data name="KeysEmpty" xml:space="preserve"><value>Ключей в конфиге нет.</value></data>
+  <data name="KeysSaved" xml:space="preserve"><value>Ключ записан. Перезапусти OpenCode.</value></data>
+  <data name="GuideTelegram" xml:space="preserve"><value>Telegram MCP (по шагам)
+
+1. Открой сайт кнопкой ниже: my.telegram.org/apps
+2. Войди по номеру телефона (код придёт в Telegram).
+3. Создай приложение, если его ещё нет. Любое имя.
+4. Скопируй api_id (число) и api_hash (длинная строка).
+5. В XNGPad нажми «Добавить» у Telegram и вставь оба значения.
+6. Я пропишу npx mcp-telegram без лишних аргументов. Аргумент start ломает OpenCode — его быть не должно.
+7. Перезапусти OpenCode и попроси агента вызвать login. Вход в Telegram будет в браузере, не в этой форме.
+8. В чате OpenCode: «покажи непрочитанные в Telegram».
+
+Это доступ к твоему аккаунту, не бот. Не коммить opencode.json.</value></data>
+  <data name="GuideKompas" xml:space="preserve"><value>КОМПАС-3D MCP (по шагам)
+
+Нужен установленный КОМПАС-3D на этом ПК.
+
+1. Нажми «Добавить». Я скачаю kompas-mcp.exe и сам запрошу config.json у kompasmcp.ru, затем запишу его в %USERPROFILE%\.kompasmcp\config.json.
+2. Запусти КОМПАС-3D (один экземпляр).
+3. Перезапусти OpenCode.
+4. В чате: «создай деталь 20×20×10 мм» или «нарисуй прямоугольник 100×50».
+
+Если инвайт на сайте сменился — нажми «Токен» и вставь новый код или сам JSON. Если инструменты не отвечают, КОМПАС должен быть открыт.</value></data>
+  <data name="GuideOffice" xml:space="preserve"><value>Microsoft Office MCP (по шагам)
+
+Нужны установленные Word / Excel / PowerPoint и Python 3.11+.
+
+1. Нажми «Добавить» у Excel, Word или PowerPoint.
+2. Если Python нет — я попробую поставить его через winget.
+3. Затем pip install mcp-office и запись в opencode.json.
+4. Файлы берутся из Desktop\projects, если папка есть, иначе из профиля.
+5. Перезапусти OpenCode.
+6. В чате: «открой таблицу … и суммируй столбец B» или «собери docx из этого текста».
+
+Не ставь пакет excelmcp с PyPI — нужен именно mcp-office.</value></data>
 </root>

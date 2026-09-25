@@ -159,4 +159,55 @@ public class McpRegistryTests
     {
         Assert.Equal("Маркетплейс", McpRegistry.ParseLingva("""{"translation":"Маркетплейс"}"""));
     }
+
+    [Fact]
+    public void CreateNode_Telegram_WritesBothEnvNames()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "telegram");
+        var node = McpCatalog.CreateNode(def, new AppSettings(), "12345", "abchash");
+        Assert.Equal("12345", node["environment"]!["TELEGRAM_API_ID"]!.GetValue<string>());
+        Assert.Equal("abchash", node["environment"]!["TELEGRAM_API_HASH"]!.GetValue<string>());
+        Assert.Null(node["environment"]!["API_ID"]);
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Equal(["npx", "-y", "mcp-telegram"], cmd);
+        Assert.DoesNotContain("start", cmd);
+    }
+
+    [Fact]
+    public void CreateNode_Excel_UsesPythonModule()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "office-excel");
+        var node = McpCatalog.CreateNode(def, new AppSettings());
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Contains("-m", cmd);
+        Assert.Contains("mcp-fetch", McpCatalog.CreateNode("fetch", new AppSettings())["command"]!.AsArray().Select(x => x!.GetValue<string>()));
+        var hf = McpCatalog.CreateNode(McpCatalog.All.First(x => x.Id == "huggingface"), new AppSettings(), "hf_test");
+        Assert.Equal("remote", hf["type"]!.GetValue<string>());
+        Assert.Equal("https://hf.co/mcp", hf["url"]!.GetValue<string>());
+        Assert.Equal("Bearer hf_test", hf["headers"]!["Authorization"]!.GetValue<string>());
+        Assert.Contains("excelmcp.server", cmd);
+        Assert.Equal("true", node["environment"]!["EXCEL_ENABLE_WRITE"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void KompasConfig_ExtractsJsonFromDataUri()
+    {
+        var json = """{"mode":"saas","client_id":"x"}""";
+        var href = "data:application/json;charset=utf-8," + Uri.EscapeDataString(json);
+        var html = $"<a download=\"config.json\" href=\"{href}\">dl</a><textarea>not json</textarea>";
+        Assert.Equal(json, KompasConfig.ExtractJson(html));
+        Assert.True(KompasConfig.LooksLikeConfig(json));
+        Assert.Null(KompasConfig.ExtractJson("<div class=\"notice-box alert\">invalid bootstrap invite</div>"));
+    }
+
+    [Fact]
+    public void CreateNode_Kompas_UsesLocalExe()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "kompas-3d");
+        var node = McpCatalog.CreateNode(def, new AppSettings());
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Single(cmd);
+        Assert.EndsWith("kompas-mcp.exe", cmd[0], StringComparison.OrdinalIgnoreCase);
+        Assert.False(McpCatalog.NeedsNpx(def));
+    }
 }

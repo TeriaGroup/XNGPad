@@ -8,6 +8,7 @@ public sealed class AppSettings
     public string? OpenCodeConfigPath { get; set; }
     public string Language { get; set; } = "";
     public List<string> HiddenMcpIds { get; set; } = [];
+    public List<string> UsedMcpIds { get; set; } = [];
 
     public string ResolvedUrl()
     {
@@ -37,7 +38,8 @@ public sealed class AppSettings
             SearxngUrl = SearxngUrl,
             OpenCodeConfigPath = OpenCodeConfigPath,
             Language = Language,
-            HiddenMcpIds = [.. HiddenMcpIds]
+            HiddenMcpIds = [.. HiddenMcpIds],
+            UsedMcpIds = [.. UsedMcpIds]
         };
     }
 }

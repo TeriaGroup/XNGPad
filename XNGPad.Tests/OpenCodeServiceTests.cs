@@ -150,4 +150,52 @@ public class OpenCodeServiceTests : IDisposable
         Assert.Throws<BrokenOpenCodeJsonException>(() => _svc.Disconnect(path));
         Assert.Equal(broken, File.ReadAllText(path));
     }
+
+    [Fact]
+    public void RepairTelegram_RemovesStart_LeavesOtherMcp()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "exa": { "type": "remote", "headers": { "x-api-key": "keep" } },
+                "telegram": {
+                  "type": "local",
+                  "command": ["npx", "-y", "mcp-telegram", "start"]
+                }
+              }
+            }
+            """);
+        Assert.True(_svc.RepairTelegram(path));
+        Assert.False(_svc.RepairTelegram(path));
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var cmd = root["mcp"]!["telegram"]!["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Equal(["npx", "-y", "mcp-telegram"], cmd);
+        Assert.Equal("keep", root["mcp"]!["exa"]!["headers"]!["x-api-key"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void RepairMcp_FixesFetchAndHuggingFace_DisablesDeadRemotes()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "fetch": { "type": "local", "command": ["npx", "-y", "@modelcontextprotocol/server-fetch"], "enabled": true },
+                "huggingface": { "type": "local", "command": ["npx", "-y", "@huggingface/mcp-server"], "environment": { "HF_TOKEN": "hf_test" } },
+                "agentic-news": { "type": "remote", "url": "https://api.agentic-news.ai/mcp", "enabled": true },
+                "memory": { "type": "local", "command": ["npx", "-y", "@modelcontextprotocol/server-memory"], "enabled": true }
+              }
+            }
+            """);
+        Assert.True(_svc.RepairMcp(path));
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        var fetch = root["mcp"]!["fetch"]!["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.Contains("mcp-fetch", fetch);
+        Assert.DoesNotContain(fetch, x => x.Contains("server-fetch"));
+        Assert.Equal("remote", root["mcp"]!["huggingface"]!["type"]!.GetValue<string>());
+        Assert.Equal("Bearer hf_test", root["mcp"]!["huggingface"]!["headers"]!["Authorization"]!.GetValue<string>());
+        Assert.False(root["mcp"]!["agentic-news"]!["enabled"]!.GetValue<bool>());
+        Assert.Equal(120000, root["mcp"]!["memory"]!["timeout"]!.GetValue<int>());
+    }
 }

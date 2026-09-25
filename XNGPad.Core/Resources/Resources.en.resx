@@ -319,4 +319,63 @@ The password in the URL is a secret.</value></data>
   <data name="FilterNoKey" xml:space="preserve"><value>No key</value></data>
   <data name="FilterNpm" xml:space="preserve"><value>npx</value></data>
   <data name="FilterRemote" xml:space="preserve"><value>Remote</value></data>
+  <data name="McpTelegramHint" xml:space="preserve"><value>Reads and writes Telegram chats with your account. Needs API ID and API Hash.</value></data>
+  <data name="McpKompasHint" xml:space="preserve"><value>2D drawings and 3D parts in installed KOMPAS-3D.</value></data>
+  <data name="McpExcelHint" xml:space="preserve"><value>Reads and edits Excel workbooks on this PC.</value></data>
+  <data name="McpWordHint" xml:space="preserve"><value>Reads and builds Word documents on this PC.</value></data>
+  <data name="McpPptHint" xml:space="preserve"><value>Builds and edits PowerPoint decks on this PC.</value></data>
+  <data name="TokenHintTelegramId" xml:space="preserve"><value>API ID (number) from my.telegram.org/apps</value></data>
+  <data name="TokenHintTelegramHash" xml:space="preserve"><value>API Hash (string) from the same page</value></data>
+  <data name="ErrorPythonMissing" xml:space="preserve"><value>Python 3.11+ is required. Install it or enable winget, then click Add again.</value></data>
+  <data name="ErrorKompasDownload" xml:space="preserve"><value>Could not download kompas-mcp. Check the internet, then click Add again.</value></data>
+  <data name="ErrorKompasInvite" xml:space="preserve"><value>The kompasmcp.ru invite was rejected. Click Token and paste the code or the config.json.</value></data>
+  <data name="TokenHintKompas" xml:space="preserve"><value>Invite from kompasmcp.ru (invite-…) or the full config.json</value></data>
+  <data name="QueueTitle" xml:space="preserve"><value>Download queue</value></data>
+  <data name="QueueQueued" xml:space="preserve"><value>Queued</value></data>
+  <data name="QueueRunning" xml:space="preserve"><value>Downloading…</value></data>
+  <data name="QueueDone" xml:space="preserve"><value>Done</value></data>
+  <data name="QueueError" xml:space="preserve"><value>Failed</value></data>
+  <data name="McpUsed" xml:space="preserve"><value>Used</value></data>
+  <data name="McpForget" xml:space="preserve"><value>Delete</value></data>
+  <data name="McpUsedEmpty" xml:space="preserve"><value>Empty for now. MCPs you add show up here on their own.</value></data>
+  <data name="ReissueKeys" xml:space="preserve"><value>Keys</value></data>
+  <data name="KeysTitle" xml:space="preserve"><value>Reissue keys</value></data>
+  <data name="KeysHint" xml:space="preserve"><value>Keys from opencode.json and the sites where you reissue them. Paste a new one and click Save. Do not paste them into chat.</value></data>
+  <data name="KeysOpenAll" xml:space="preserve"><value>Open all sites</value></data>
+  <data name="KeysEmpty" xml:space="preserve"><value>No keys in the config.</value></data>
+  <data name="KeysSaved" xml:space="preserve"><value>Key saved. Restart OpenCode.</value></data>
+  <data name="GuideTelegram" xml:space="preserve"><value>Telegram MCP (steps)
+
+1. Open the site with the button below: my.telegram.org/apps
+2. Sign in with your phone (the code arrives in Telegram).
+3. Create an app if you do not have one. Any name.
+4. Copy api_id (number) and api_hash (long string).
+5. In XNGPad click Add on Telegram and paste both values.
+6. I write npx mcp-telegram with no extra arguments. The start argument breaks OpenCode — it must not be there.
+7. Restart OpenCode and ask the agent to call login. Telegram sign-in happens in the browser, not in this form.
+8. In OpenCode chat: “show unread Telegram chats”.
+
+This uses your user account, not a bot. Do not commit opencode.json.</value></data>
+  <data name="GuideKompas" xml:space="preserve"><value>KOMPAS-3D MCP (steps)
+
+KOMPAS-3D must already be installed on this PC.
+
+1. Click Add. I download kompas-mcp.exe, request config.json from kompasmcp.ru, and save it to %USERPROFILE%\.kompasmcp\config.json.
+2. Start KOMPAS-3D (one instance).
+3. Restart OpenCode.
+4. In chat: “create a 20×20×10 mm part” or “draw a 100×50 rectangle”.
+
+If the site invite changed, click Token and paste the new code or the JSON. If tools do not respond, KOMPAS must be open.</value></data>
+  <data name="GuideOffice" xml:space="preserve"><value>Microsoft Office MCP (steps)
+
+Word / Excel / PowerPoint must be installed, plus Python 3.11+.
+
+1. Click Add on Excel, Word, or PowerPoint.
+2. If Python is missing I try to install it with winget.
+3. Then pip install mcp-office and write opencode.json.
+4. Files are taken from Desktop\projects if that folder exists, otherwise your profile.
+5. Restart OpenCode.
+6. In chat: “open this workbook and sum column B” or “build a docx from this text”.
+
+Do not pip install excelmcp from PyPI — the package is mcp-office.</value></data>
 </root>

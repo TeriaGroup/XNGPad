@@ -58,8 +58,11 @@
     <DockPanel Margin="16,12">
         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBlock Text="{Binding Loc[Install]}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
-            <Button Content="{Binding Loc[Close]}" Click="Close_Click"
-                    Style="{StaticResource LangButton}" HorizontalAlignment="Right"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="{Binding Loc[ReissueKeys]}" Command="{Binding OpenKeysCommand}"
+                        Style="{StaticResource LangButton}" Margin="0,0,8,0"/>
+                <Button Content="{Binding Loc[Close]}" Click="Close_Click" Style="{StaticResource LangButton}"/>
+            </StackPanel>
         </Grid>
         <TextBlock DockPanel.Dock="Top" Text="{Binding Loc[InstallHint]}" TextWrapping="Wrap" FontSize="12"
                    Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4"/>
@@ -73,10 +76,31 @@
             <Hyperlink NavigateUri="https://github.com/mcp" RequestNavigate="Link_Click">GitHub Registry</Hyperlink>
         </TextBlock>
         <ProgressBar DockPanel.Dock="Top" Height="3" IsIndeterminate="True" Margin="0,0,0,6"
-                     Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}"
+                     Visibility="{Binding ShowInstallProgress, Converter={StaticResource BoolVis}}"
                      Foreground="{StaticResource AccentBrush}" Background="Transparent" BorderThickness="0"/>
         <TextBlock DockPanel.Dock="Top" Text="{Binding BusyText}" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,6"
                    Visibility="{Binding BusyText, Converter={StaticResource StrVis}}"/>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" MaxHeight="96"
+                   Visibility="{Binding ShowDownloadQueue, Converter={StaticResource BoolVis}}">
+            <TextBlock DockPanel.Dock="Top" Text="{Binding Loc[QueueTitle]}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding DownloadJobs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontSize="12"
+                                           Foreground="{StaticResource MutedBrush}" Margin="10,0,0,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="Node.js" Foreground="{StaticResource MutedBrush}"/>
             <TextBlock Text="{Binding NodeInstallStatus}" FontWeight="SemiBold" Margin="6,0,20,0"/>
@@ -95,6 +119,32 @@
             <Button Content="{Binding Loc[InstallOpenCode]}" Command="{Binding InstallOpenCodeCommand}" Style="{StaticResource AccentButton}"
                     Height="32" FontSize="13" Padding="12,0"
                     Visibility="{Binding ShowInstallOpenCode, Converter={StaticResource BoolVis}}"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="{Binding Loc[McpAvailable]}" Command="{Binding SetInstallPageCommand}" CommandParameter="catalog">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding InstallIsCatalog}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="{Binding Loc[McpUsed]}" Command="{Binding SetInstallPageCommand}" CommandParameter="used">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource LangButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding InstallIsUsed}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
         </StackPanel>
         <TextBox DockPanel.Dock="Top" Text="{Binding McpSearch, UpdateSourceTrigger=PropertyChanged}"
                  Style="{StaticResource FieldBox}" Padding="8,5" FontSize="13" Margin="0,0,0,6"
@@ -164,7 +214,43 @@
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding Banner}" TextWrapping="Wrap" Margin="2,8,2,0"
                    Visibility="{Binding Banner, Converter={StaticResource StrVis}}"
                    Foreground="{Binding BannerLevel, Converter={StaticResource BannerBrush}}"/>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
+                      Visibility="{Binding InstallIsUsed, Converter={StaticResource BoolVis}}">
+            <StackPanel>
+                <TextBlock Text="{Binding Loc[McpUsedEmpty]}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"
+                           Margin="0,8,0,8" FontSize="12"
+                           Visibility="{Binding ShowUsedEmpty, Converter={StaticResource BoolVis}}"/>
+                <ItemsControl ItemsSource="{Binding UsedMcpRows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="10" Margin="0,0,10,10" Padding="14,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="{Binding DataContext.Loc[McpForget], RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.ForgetMcpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource BarButton}" Height="32" Padding="12,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly"
+                      Visibility="{Binding InstallIsCatalog, Converter={StaticResource BoolVis}}">
             <StackPanel>
                 <StackPanel Visibility="{Binding ShowAddedMcps, Converter={StaticResource BoolVis}}">
                     <Button Command="{Binding ToggleAddedMcpsCommand}" Style="{StaticResource FoldHeader}">

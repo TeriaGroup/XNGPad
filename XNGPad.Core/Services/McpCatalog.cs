@@ -8,7 +8,12 @@ public enum McpExtra
     None,
     Searxng,
     Filesystem,
-    Sqlite
+    Sqlite,
+    Telegram,
+    Kompas,
+    OfficeExcel,
+    OfficeWord,
+    OfficePpt
 }
 
 public sealed record McpDef(
@@ -23,7 +28,10 @@ public sealed record McpDef(
     string? TokenEnvKey = null,
     bool TokenAsArg = false,
     string? Hint = null,
-    string? RemoteUrl = null);
+    string? RemoteUrl = null,
+    string? TokenEnvKey2 = null,
+    string? TokenHeader = null,
+    string? TokenHeaderPrefix = null);
 
 public static class McpCatalog
 {
@@ -36,7 +44,7 @@ public static class McpCatalog
         new("docker-mcp", "mcp-server-docker", "McpDockerMcpHint", "https://github.com/ckreiling/mcp-server-docker", "mcp-server-docker"),
         new("duckduckgo", "DuckDuckGo", "McpDdgHint", "https://github.com/nickclyde/duckduckgo-mcp-server", "duckduckgo-mcp-server"),
         new("everything", "Everything", "McpEverythingHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/everything", "@modelcontextprotocol/server-everything"),
-        new("fetch", "Fetch", "McpFetchHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch", "@modelcontextprotocol/server-fetch"),
+        new("fetch", "Fetch", "McpFetchHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch", "mcp-fetch"),
         new("filesystem", "Filesystem", "McpFilesystemHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem", "@modelcontextprotocol/server-filesystem", McpExtra.Filesystem),
         new("gdrive", "Google Drive", "McpGdriveHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/gdrive", "@modelcontextprotocol/server-gdrive", GuideKey: "GuideGdrive", TokenUrl: "https://console.cloud.google.com/apis/library/drive.googleapis.com", TokenEnvKey: "GOOGLE_APPLICATION_CREDENTIALS"),
         new("git", "Git", "McpGitHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/git", "@modelcontextprotocol/server-git"),
@@ -64,7 +72,7 @@ public static class McpCatalog
         new("chrome-devtools", "Chrome DevTools", "McpChromeHint", "https://github.com/ChromeDevTools/chrome-devtools-mcp", "chrome-devtools-mcp"),
         new("mongodb", "MongoDB", "McpMongoHint", "https://github.com/mongodb-js/mongodb-mcp-server", "mongodb-mcp-server"),
         new("figma", "Figma", "McpFigmaHint", "https://github.com/GLips/Figma-Context-MCP", "figma-developer-mcp", GuideKey: "GuideGeneric", TokenUrl: "https://www.figma.com/developers/api#access-tokens", TokenEnvKey: "FIGMA_API_KEY"),
-        new("huggingface", "Hugging Face", "McpHfHint", "https://github.com/huggingface/huggingface.js", "@huggingface/mcp-server", GuideKey: "GuideGeneric", TokenUrl: "https://huggingface.co/settings/tokens", TokenEnvKey: "HF_TOKEN"),
+        new("huggingface", "Hugging Face", "McpHfHint", "https://huggingface.co/settings/mcp", "", GuideKey: "GuideGeneric", TokenUrl: "https://huggingface.co/settings/tokens", TokenEnvKey: "HF_TOKEN", RemoteUrl: "https://hf.co/mcp", TokenHeader: "Authorization", TokenHeaderPrefix: "Bearer "),
         new("neon", "Neon", "McpNeonHint", "https://github.com/neondatabase/mcp-server-neon", "@neondatabase/mcp-server-neon", GuideKey: "GuideGeneric", TokenUrl: "https://console.neon.tech", TokenEnvKey: "NEON_API_KEY"),
         new("supabase", "Supabase", "McpSupabaseHint", "https://github.com/supabase-community/supabase-mcp", "@supabase/mcp-server-supabase", GuideKey: "GuideGeneric", TokenUrl: "https://supabase.com/dashboard/account/tokens", TokenEnvKey: "SUPABASE_ACCESS_TOKEN"),
         new("browserbase", "Browserbase", "McpBrowserbaseHint", "https://github.com/browserbase/mcp-server-browserbase", "@browserbasehq/mcp", GuideKey: "GuideGeneric", TokenUrl: "https://www.browserbase.com/", TokenEnvKey: "BROWSERBASE_API_KEY"),
@@ -73,7 +81,12 @@ public static class McpCatalog
         new("hackernews", "Hacker News", "McpHnHint", "https://github.com/pskill9/hn-server", "hn-server"),
         new("qdrant", "Qdrant", "McpQdrantHint", "https://github.com/qdrant/mcp-server-qdrant", "mcp-server-qdrant"),
         new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch"),
-        new("time", "Time", "McpTimeHint", "https://github.com/yokingma/time-mcp", "time-mcp")
+        new("time", "Time", "McpTimeHint", "https://github.com/yokingma/time-mcp", "time-mcp"),
+        new("telegram", "Telegram", "McpTelegramHint", "https://github.com/dryeab/mcp-telegram", "mcp-telegram", McpExtra.Telegram, GuideKey: "GuideTelegram", TokenUrl: "https://my.telegram.org/apps", TokenEnvKey: "API_ID", TokenEnvKey2: "API_HASH"),
+        new("kompas-3d", "КОМПАС-3D", "McpKompasHint", "https://github.com/dwnmf/KOMPAS-3D-MCP-bin", "", McpExtra.Kompas, GuideKey: "GuideKompas", TokenUrl: "https://kompasmcp.ru/"),
+        new("office-excel", "Excel", "McpExcelHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeExcel, GuideKey: "GuideOffice"),
+        new("office-word", "Word", "McpWordHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeWord, GuideKey: "GuideOffice"),
+        new("office-ppt", "PowerPoint", "McpPptHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficePpt, GuideKey: "GuideOffice")
     ];
 
     public static JsonObject CreateNode(string id, AppSettings settings, string? secret = null)
@@ -82,26 +95,35 @@ public static class McpCatalog
         return CreateNode(def, settings, secret);
     }
 
-    public static JsonObject CreateNode(McpDef def, AppSettings settings, string? secret = null)
+    public static JsonObject CreateNode(McpDef def, AppSettings settings, string? secret = null, string? secret2 = null)
     {
         JsonObject? env = null;
         if (!string.IsNullOrEmpty(def.TokenEnvKey) && !string.IsNullOrEmpty(secret))
-        {
             env = new JsonObject { [def.TokenEnvKey] = secret };
+        if (!string.IsNullOrEmpty(def.TokenEnvKey2) && !string.IsNullOrEmpty(secret2))
+        {
+            env ??= new JsonObject();
+            env[def.TokenEnvKey2] = secret2;
         }
 
-        if (string.IsNullOrEmpty(def.Package) && !string.IsNullOrEmpty(def.RemoteUrl))
+        if (def.Extra == McpExtra.Telegram)
         {
-            var remote = new JsonObject
-            {
-                ["type"] = "remote",
-                ["url"] = def.RemoteUrl,
-                ["enabled"] = true
-            };
-            if (env != null)
-                remote["environment"] = env;
-            return remote;
+            env = new JsonObject();
+            if (!string.IsNullOrEmpty(secret))
+                env["TELEGRAM_API_ID"] = secret;
+            if (!string.IsNullOrEmpty(secret2))
+                env["TELEGRAM_API_HASH"] = secret2;
+            return Local(["npx", "-y", "mcp-telegram"], env);
         }
+
+        if (def.Extra == McpExtra.Kompas)
+            return Local([KompasExePath()], env);
+
+        if (def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
+            return OfficeNode(def.Extra, env);
+
+        if (string.IsNullOrEmpty(def.Package) && !string.IsNullOrEmpty(def.RemoteUrl))
+            return Remote(def, secret, env);
 
         var args = new List<string> { "npx", "-y", def.Package };
         switch (def.Extra)
@@ -124,6 +146,78 @@ public static class McpCatalog
         return Local(args, env);
     }
 
+    public static string KompasExePath()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            Constants.SettingsFolderName,
+            "kompas-mcp",
+            "kompas-mcp.exe");
+    }
+
+    public static bool NeedsNpx(McpDef def) =>
+        def.Extra is not (McpExtra.Kompas or McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
+        && (def.Package.Length > 0 || def.Extra == McpExtra.Telegram);
+
+    public static bool NeedsPython(McpDef def) =>
+        def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt;
+
+    public static bool NeedsKompasBin(McpDef def) => def.Extra == McpExtra.Kompas;
+
+    private static JsonObject OfficeNode(McpExtra extra, JsonObject? env)
+    {
+        var root = FilesystemRoot();
+        string module;
+        string allow;
+        string write;
+        switch (extra)
+        {
+            case McpExtra.OfficeWord:
+                module = "wordmcp.server";
+                allow = "WORD_ALLOWLIST_ROOTS";
+                write = "WORD_ENABLE_WRITE";
+                break;
+            case McpExtra.OfficePpt:
+                module = "pptmcp.server";
+                allow = "PPT_ALLOWLIST_ROOTS";
+                write = "PPT_ENABLE_WRITE";
+                break;
+            default:
+                module = "excelmcp.server";
+                allow = "EXCEL_ALLOWLIST_ROOTS";
+                write = "EXCEL_ENABLE_WRITE";
+                break;
+        }
+
+        env ??= new JsonObject();
+        env[allow] = root;
+        env[write] = "true";
+        var cmd = new List<string>();
+        cmd.AddRange(InstallService.PythonCommand());
+        cmd.Add("-m");
+        cmd.Add(module);
+        return Local(cmd, env);
+    }
+
+    private static JsonObject Remote(McpDef def, string? secret, JsonObject? env)
+    {
+        var remote = new JsonObject
+        {
+            ["type"] = "remote",
+            ["url"] = def.RemoteUrl,
+            ["enabled"] = true,
+            ["timeout"] = 60000
+        };
+        if (!string.IsNullOrEmpty(def.TokenHeader) && !string.IsNullOrEmpty(secret))
+        {
+            var value = (def.TokenHeaderPrefix ?? "") + secret;
+            remote["headers"] = new JsonObject { [def.TokenHeader] = value };
+        }
+        else if (env != null)
+            remote["environment"] = env;
+        return remote;
+    }
+
     private static JsonObject Local(List<string> command, JsonObject? env)
     {
         var cmd = new JsonArray();
@@ -133,7 +227,8 @@ public static class McpCatalog
         {
             ["type"] = "local",
             ["command"] = cmd,
-            ["enabled"] = true
+            ["enabled"] = true,
+            ["timeout"] = 120000
         };
         if (env != null)
             node["environment"] = env;
