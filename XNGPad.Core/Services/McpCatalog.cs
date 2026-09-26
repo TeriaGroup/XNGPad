@@ -81,14 +81,14 @@ public static class McpCatalog
         new("mermaid", "Mermaid", "McpMermaidHint", "https://github.com/hustcc/mcp-mermaid", "mcp-mermaid"),
         new("hackernews", "Hacker News", "McpHnHint", "https://github.com/pskill9/hn-server", "hn-server"),
         new("qdrant", "Qdrant", "McpQdrantHint", "https://github.com/qdrant/mcp-server-qdrant", "mcp-server-qdrant"),
-        new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch", GuideKey: "GuideGeneric", TokenUrl: "https://www.elastic.co/docs/deploy-manage/api-keys", TokenEnvKey: "ES_URL", TokenEnvKey2: "ES_API_KEY"),
+        new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch", GuideKey: "GuideElasticsearch", TokenUrl: "https://www.elastic.co/docs/deploy-manage/api-keys", TokenEnvKey: "ES_URL", TokenEnvKey2: "ES_API_KEY"),
         new("time", "Time", "McpTimeHint", "https://github.com/yokingma/time-mcp", "time-mcp"),
-        new("telegram", "Telegram", "McpTelegramHint", "https://github.com/dryeab/mcp-telegram", "mcp-telegram", McpExtra.Telegram, GuideKey: "GuideTelegram", TokenUrl: "https://my.telegram.org/apps", TokenEnvKey: "API_ID", TokenEnvKey2: "API_HASH"),
+        new("telegram", "Telegram", "McpTelegramHint", "https://github.com/beautyfree/mcp-telegram", "mcp-telegram", McpExtra.Telegram, GuideKey: "GuideTelegram", TokenUrl: "https://my.telegram.org/apps", TokenEnvKey: "API_ID", TokenEnvKey2: "API_HASH"),
         new("kompas-3d", "КОМПАС-3D", "McpKompasHint", "https://github.com/dwnmf/KOMPAS-3D-MCP-bin", "", McpExtra.Kompas, GuideKey: "GuideKompas", TokenUrl: "https://kompasmcp.ru/"),
         new("office-excel", "Excel", "McpExcelHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeExcel, GuideKey: "GuideOffice"),
         new("office-word", "Word", "McpWordHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeWord, GuideKey: "GuideOffice"),
         new("office-ppt", "PowerPoint", "McpPptHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficePpt, GuideKey: "GuideOffice"),
-        new("ufp", "UFP", "McpUfpHint", "https://agenticfabricationnetwork.ai/", "", McpExtra.Ufp, RemoteUrl: UfpProxy.Url)
+        new("ufp", "UFP", "McpUfpHint", "https://agenticfabricationnetwork.ai/", "", McpExtra.Ufp, GuideKey: "GuideUfp", RemoteUrl: UfpProxy.Url)
     ];
 
     public static JsonObject CreateNode(string id, AppSettings settings, string? secret = null)
@@ -121,7 +121,8 @@ public static class McpCatalog
                 env["TELEGRAM_API_ID"] = secret;
             if (!string.IsNullOrEmpty(secret2))
                 env["TELEGRAM_API_HASH"] = secret2;
-            return Local(["npx", "-y", "mcp-telegram"], env);
+            TelegramLaunch.Ensure();
+            return Local([NodeExe(), TelegramLaunch.ScriptPath()], env);
         }
 
         if (def.Extra == McpExtra.Kompas)

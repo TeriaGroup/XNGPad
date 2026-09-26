@@ -9,7 +9,7 @@
     <AssemblyName>XNGPad</AssemblyName>
     <RootNamespace>XNGPad.App</RootNamespace>
     <Product>XNGPad</Product>
-    <Version>1.2.1</Version>
+    <Version>1.3.0</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <SatelliteResourceLanguages>en;ru</SatelliteResourceLanguages>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>

@@ -366,31 +366,36 @@ The password in the URL is a secret.</value></data>
   <data name="KeysOpenAll" xml:space="preserve"><value>Open all sites</value></data>
   <data name="KeysEmpty" xml:space="preserve"><value>No keys in the config.</value></data>
   <data name="KeysSaved" xml:space="preserve"><value>Key saved. Restart OpenCode.</value></data>
+  <data name="TelegramPublicKeyRejected" xml:space="preserve"><value>api_id 17349 is the shared Telegram Desktop key. Codes are not delivered to it. Create your own app at my.telegram.org/apps.</value></data>
   <data name="GuideTelegram" xml:space="preserve"><value>Telegram MCP (steps)
 
-1. Open the site with the button below: my.telegram.org/apps
-2. Sign in with your phone (the code arrives in Telegram).
-3. Create an app if you do not have one. Any name.
-4. Copy api_id (number) and api_hash (long string).
-5. In XNGPad click Add on Telegram and paste both values.
-6. I write npx mcp-telegram with no extra arguments. The start argument breaks OpenCode — it must not be there.
-7. Restart OpenCode and ask the agent to call login. Telegram sign-in happens in the browser, not in this form.
-8. In OpenCode chat: “show unread Telegram chats”.
+This is your account, not a bot. Messages are sent as you. Do not paste keys into chat.
 
-This uses your user account, not a bot. Do not commit opencode.json.</value></data>
+1. Use your own key. I reject api_id 17349: Telegram does not send codes for it.
+2. Open my.telegram.org/apps with the button below. The site login code arrives in the Telegram app, chat “Telegram”, not by SMS.
+3. If the site does not open without a VPN, I try to add 149.154.167.220 my.telegram.org to the hosts file. If that needs admin, add the line yourself in C:\Windows\System32\drivers\etc\hosts. A VPN is fine if you keep one server for the whole visit. Avoid Netherlands, Germany, and US datacenters.
+4. If an app already exists, do not create another. Copy App api_id and App api_hash.
+5. To create one: title XNGPad, a unique short name such as xngpad26, platform Desktop, URL may be empty. Do not put the word Telegram in the title. ERROR or [object Object] is the site failing to show the real error. Turn off the ad blocker, reload, and change the short name.
+6. In XNGPad click Add and paste your api_id and api_hash. I install a local launcher, fix the Windows session path, and do not open several login windows.
+7. Restart OpenCode. Keep a single login window. Several mcp-telegram tabs stop codes from arriving.
+8. The code arrives in the Telegram app, service chat “Telegram”. It is not an SMS. SEND_CODE_UNAVAILABLE means Telegram refused SMS. Then click “Sign in with QR, no code”. On the phone: Settings, Devices, Link Desktop Device.
+9. After success you can close the tab, even if not_found flashed. The session is in %USERPROFILE%\.telegram-agent.
+10. In OpenCode chat: “show unread Telegram chats”, “find chat …”, “write to …”. Do not ask to delete chats or transfer a channel unless you mean it.</value></data>
   <data name="GuideKompas" xml:space="preserve"><value>KOMPAS-3D MCP (steps)
 
 KOMPAS-3D must already be installed on this PC.
 
 1. Click Add. I download kompas-mcp.exe, request config.json from kompasmcp.ru, and save it to %USERPROFILE%\.kompasmcp\config.json.
-2. Start KOMPAS-3D (one instance).
-3. Restart OpenCode.
-4. In chat: “create a 20×20×10 mm part” or “draw a 100×50 rectangle”.
+2. I ask for the folder with kStudy.exe only if I cannot find it. Pick the install directory or its Bin folder.
+3. If Windows still looks in an old folder, I link that path to the real one. Otherwise the MCP dies with a library load error and OpenCode shows Connection closed.
+4. On connect I start KOMPAS myself. Do not open a second copy.
+5. Restart OpenCode.
+6. In chat: “create a 20×20×10 mm part” or “draw a 100×50 rectangle”.
 
-If the site invite changed, click Token and paste the new code or the JSON. If tools do not respond, KOMPAS must be open.</value></data>
+If the site invite changed, click Token and paste the new code or the JSON.</value></data>
   <data name="GuideOffice" xml:space="preserve"><value>Microsoft Office MCP (steps)
 
-Word / Excel / PowerPoint must be installed, plus Python 3.11+.
+Word, Excel, or PowerPoint must be installed, plus Python 3.11+.
 
 1. Click Add on Excel, Word, or PowerPoint.
 2. If Python is missing I try to install it with winget.
@@ -399,5 +404,22 @@ Word / Excel / PowerPoint must be installed, plus Python 3.11+.
 5. Restart OpenCode.
 6. In chat: “open this workbook and sum column B” or “build a docx from this text”.
 
-Do not pip install excelmcp from PyPI — the package is mcp-office.</value></data>
+Do not pip install excelmcp from PyPI — the package is mcp-office. MarkItDown is not in the catalog: the npm package is gone.</value></data>
+  <data name="GuideElasticsearch" xml:space="preserve"><value>Elasticsearch MCP (steps)
+
+Without your own cluster the process exits and OpenCode shows Connection closed. I remove it from the config until you provide an address.
+
+1. You need ES_URL, for example https://localhost:9200, and an API key.
+2. Click Add and paste both.
+3. I turn off the telemetry log on stdout, or OpenCode cannot read the reply.
+4. Restart OpenCode.
+5. In chat: “list Elasticsearch indexes”.</value></data>
+  <data name="GuideUfp" xml:space="preserve"><value>UFP MCP (steps)
+
+The server is remote. OpenCode rejects its tuple schema, so I send it through a local proxy and rewrite items to prefixItems.
+
+1. Click Add. No key is required.
+2. Restart OpenCode.
+3. fetch failed or Request timed out means the network to agenticfabricationnetwork.ai, not the schema. Try again later.
+4. In chat you can ask for a 3D-print, CNC, or decal quote if you have a part file.</value></data>
 </root>

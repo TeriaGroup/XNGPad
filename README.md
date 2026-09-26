@@ -4,7 +4,7 @@ Windows-пульт для локального [SearXNG](https://docs.searxng.or
 
 A Windows remote for local [SearXNG](https://docs.searxng.org/) in Docker and MCP servers in [OpenCode](https://opencode.ai). No hand-editing JSON.
 
-Релиз: [v1.2.1](https://github.com/TeriaGroup/XNGPad/releases/tag/v1.2.1)
+Релиз: [v1.3.0](https://github.com/TeriaGroup/XNGPad/releases/tag/v1.3.0)
 
 ---
 
@@ -21,6 +21,7 @@ XNGPad сам не ищет в интернете. Он:
 - в окне **Установка** один список и фильтр: все, добавленные, доступные, неинтересные, использованные, нужен ключ, без ключа, npx, удалённые
 - удалённые MCP пускает через локальный прокси: OpenCode иначе отвергает их схемы
 - для КОМПАС-3D при добавлении спрашивает инвайт и папку с `kStudy.exe`, затем сам запускает КОМПАС
+- для Telegram, КОМПАС, Office, Elasticsearch и UFP есть пошаговый гайд в карточке «Подробнее». Telegram ставится локальным запуском: свой api_id, вход в браузере, код в приложении Telegram, запасной вход по QR
 - для токенов открывает короткое окно и сам прописывает ключ
 - UI на русском и английском; описания с Registry в русском режиме переводятся
 
@@ -76,6 +77,7 @@ XNGPad is not a search engine. It:
 - in **Install**, one list and a filter: all, added, available, hidden, used, needs key, no key, npx, remote
 - sends remote MCPs through a local proxy so OpenCode accepts their schemas
 - for KOMPAS-3D, asks for the invite and the folder that contains `kStudy.exe`, then starts KOMPAS itself
+- Telegram, KOMPAS, Office, Elasticsearch, and UFP have a step-by-step guide on the card. Telegram is installed through a local launcher: your own api_id, browser sign-in, the code in the Telegram app, QR as a fallback
 - asks for API tokens in a small window and writes them into the OpenCode config
 - UI in Russian and English; Registry descriptions are translated when the UI is Russian
 

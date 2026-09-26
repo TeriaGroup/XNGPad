@@ -170,7 +170,8 @@ public class OpenCodeServiceTests : IDisposable
         Assert.False(_svc.RepairTelegram(path));
         var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
         var cmd = root["mcp"]!["telegram"]!["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
-        Assert.Equal(["npx", "-y", "mcp-telegram"], cmd);
+        Assert.EndsWith("launch.mjs", cmd[^1]);
+        Assert.DoesNotContain("start", cmd);
         Assert.Equal("keep", root["mcp"]!["exa"]!["headers"]!["x-api-key"]!.GetValue<string>());
     }
 

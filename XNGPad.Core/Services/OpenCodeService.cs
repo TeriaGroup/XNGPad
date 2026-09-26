@@ -303,15 +303,26 @@ public sealed class OpenCodeService
     {
         if (mcp["telegram"] is not JsonObject node || node["command"] is not JsonArray cmd)
             return false;
-        var hasPkg = cmd.Any(x => (x?.GetValue<string>() ?? "").Contains("mcp-telegram", StringComparison.OrdinalIgnoreCase));
-        if (!hasPkg)
+        var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
+        if (!text.Contains("mcp-telegram", StringComparison.OrdinalIgnoreCase)
+            && !text.Contains("launch.mjs", StringComparison.OrdinalIgnoreCase))
             return false;
+        TelegramLaunch.Ensure();
         var changed = false;
-        for (var i = cmd.Count - 1; i >= 0; i--)
+        if (node["environment"] is JsonObject env
+            && env["TELEGRAM_API_ID"]?.GetValue<string>() == "17349")
         {
-            if (!string.Equals(cmd[i]?.GetValue<string>(), "start", StringComparison.OrdinalIgnoreCase))
-                continue;
-            cmd.RemoveAt(i);
+            env.Remove("TELEGRAM_API_ID");
+            env.Remove("TELEGRAM_API_HASH");
+            changed = true;
+        }
+
+        if (!text.Contains("launch.mjs", StringComparison.OrdinalIgnoreCase))
+        {
+            node["command"] = new JsonArray(NodeExe(), TelegramLaunch.ScriptPath());
+            node["type"] = "local";
+            node["enabled"] = true;
+            node["timeout"] = 120000;
             changed = true;
         }
 
@@ -514,23 +525,9 @@ public sealed class OpenCodeService
     {
         if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root == null)
             return false;
-        if (root["mcp"] is not JsonObject mcp || mcp["telegram"] is not JsonObject node)
+        if (root["mcp"] is not JsonObject mcp)
             return false;
-        if (node["command"] is not JsonArray cmd)
-            return false;
-        var hasPkg = cmd.Any(x => (x?.GetValue<string>() ?? "").Contains("mcp-telegram", StringComparison.OrdinalIgnoreCase));
-        if (!hasPkg)
-            return false;
-        var changed = false;
-        for (var i = cmd.Count - 1; i >= 0; i--)
-        {
-            if (!string.Equals(cmd[i]?.GetValue<string>(), "start", StringComparison.OrdinalIgnoreCase))
-                continue;
-            cmd.RemoveAt(i);
-            changed = true;
-        }
-
-        if (!changed)
+        if (!RepairTelegramNode(mcp))
             return false;
         WriteBackup(path);
         AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);

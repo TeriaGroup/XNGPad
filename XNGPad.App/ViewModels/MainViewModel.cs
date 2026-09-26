@@ -722,6 +722,8 @@ public partial class MainViewModel : ObservableObject
         string? secret2 = null;
         if (!_opencode.HasMcp(path, row.Id) && row.Def.TokenEnvKey2 != null)
         {
+            if (row.Def.Extra == McpExtra.Telegram)
+                _dialogs.ShowGuide(row.Id, Loc.Get("GuideTelegram"), row.TokenUrl);
             var es = row.Def.TokenEnvKey == "ES_URL";
             var pair = _dialogs.AskTwoSecrets(
                 row.Id,
@@ -732,6 +734,12 @@ public partial class MainViewModel : ObservableObject
                 return;
             secret = pair.Value.First;
             secret2 = pair.Value.Second;
+            if (row.Def.Extra == McpExtra.Telegram && secret == "17349")
+            {
+                Banner = Loc.Get("TelegramPublicKeyRejected");
+                BannerLevel = "warn";
+                return;
+            }
         }
         else if (!_opencode.HasMcp(path, row.Id) && row.Def.Extra == McpExtra.Kompas)
         {

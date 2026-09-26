@@ -366,31 +366,36 @@ redis://:PASSWORD@HOST:6379
   <data name="KeysOpenAll" xml:space="preserve"><value>Открыть все сайты</value></data>
   <data name="KeysEmpty" xml:space="preserve"><value>Ключей в конфиге нет.</value></data>
   <data name="KeysSaved" xml:space="preserve"><value>Ключ записан. Перезапусти OpenCode.</value></data>
+  <data name="TelegramPublicKeyRejected" xml:space="preserve"><value>api_id 17349 — общий ключ Telegram Desktop. Коды на него не приходят. Создай своё приложение на my.telegram.org/apps.</value></data>
   <data name="GuideTelegram" xml:space="preserve"><value>Telegram MCP (по шагам)
 
-1. Открой сайт кнопкой ниже: my.telegram.org/apps
-2. Войди по номеру телефона (код придёт в Telegram).
-3. Создай приложение, если его ещё нет. Любое имя.
-4. Скопируй api_id (число) и api_hash (длинная строка).
-5. В XNGPad нажми «Добавить» у Telegram и вставь оба значения.
-6. Я пропишу npx mcp-telegram без лишних аргументов. Аргумент start ломает OpenCode — его быть не должно.
-7. Перезапусти OpenCode и попроси агента вызвать login. Вход в Telegram будет в браузере, не в этой форме.
-8. В чате OpenCode: «покажи непрочитанные в Telegram».
+Это твой аккаунт, не бот. Сообщения уходят от твоего имени. В чат ключи не копируй.
 
-Это доступ к твоему аккаунту, не бот. Не коммить opencode.json.</value></data>
+1. Свой ключ, не общий. api_id 17349 я не приму: Telegram на него код не шлёт.
+2. Открой my.telegram.org/apps кнопкой ниже. Код входа на сайт приходит в приложение Telegram, чат «Telegram», не в SMS.
+3. Если сайт без VPN не открывается, я пробую прописать в hosts строку 149.154.167.220 my.telegram.org. Если прав нет — добавь её сам в C:\Windows\System32\drivers\etc\hosts. VPN можно оставить, но один сервер на весь вход, лучше не дата-центр Нидерландов, Германии или США.
+4. Если приложение уже есть, новое не создавай. Скопируй App api_id и App api_hash.
+5. Если создаёшь: App title XNGPad, Short name уникальный, например xngpad26, Platform Desktop, URL можно пустым. Слово Telegram в названии не пиши. Окно ERROR или [object Object] — это сломанный текст сайта. Выключи блокировщик рекламы, обнови страницу, смени Short name.
+6. В XNGPad нажми «Добавить» и вставь свои api_id и api_hash. Я поставлю локальный запуск, починю путь сессии на Windows и не открою несколько окон входа.
+7. Перезапусти OpenCode. Окно входа должно быть одно. Несколько вкладок mcp-telegram ломают выдачу кода.
+8. Код приходит в приложение Telegram, служебный чат «Telegram». Это не SMS. Ошибка SEND_CODE_UNAVAILABLE значит, что SMS Telegram запретил. Тогда нажми «Войти по QR, без кода». На телефоне: Настройки, Устройства, Подключить устройство.
+9. После успеха вкладку можно закрыть, даже если мелькнуло not_found. Сессия лежит в %USERPROFILE%\.telegram-agent.
+10. В чате OpenCode: «покажи непрочитанные в Telegram», «найди чат …», «напиши в …». Удаление чатов и передачу канала не проси, пока сам не уверен.</value></data>
   <data name="GuideKompas" xml:space="preserve"><value>КОМПАС-3D MCP (по шагам)
 
 Нужен установленный КОМПАС-3D на этом ПК.
 
-1. Нажми «Добавить». Я скачаю kompas-mcp.exe и сам запрошу config.json у kompasmcp.ru, затем запишу его в %USERPROFILE%\.kompasmcp\config.json.
-2. Запусти КОМПАС-3D (один экземпляр).
-3. Перезапусти OpenCode.
-4. В чате: «создай деталь 20×20×10 мм» или «нарисуй прямоугольник 100×50».
+1. Нажми «Добавить». Я скачаю kompas-mcp.exe, запрошу config.json у kompasmcp.ru и запишу его в %USERPROFILE%\.kompasmcp\config.json.
+2. Папку с kStudy.exe спрошу только если сам не нашёл. Можно указать каталог установки или его Bin.
+3. Если Windows ищет КОМПАС в старой папке, я свяжу её с настоящей. Иначе MCP падает с «ошибка при загрузке библиотеки» и OpenCode пишет Connection closed.
+4. При подключении я сам запускаю КОМПАС. Второй экземпляр не открывай.
+5. Перезапусти OpenCode.
+6. В чате: «создай деталь 20×20×10 мм» или «нарисуй прямоугольник 100×50».
 
-Если инвайт на сайте сменился — нажми «Токен» и вставь новый код или сам JSON. Если инструменты не отвечают, КОМПАС должен быть открыт.</value></data>
+Если инвайт на сайте сменился — нажми «Токен» и вставь новый код или сам JSON.</value></data>
   <data name="GuideOffice" xml:space="preserve"><value>Microsoft Office MCP (по шагам)
 
-Нужны установленные Word / Excel / PowerPoint и Python 3.11+.
+Нужны установленные Word, Excel или PowerPoint и Python 3.11+.
 
 1. Нажми «Добавить» у Excel, Word или PowerPoint.
 2. Если Python нет — я попробую поставить его через winget.
@@ -399,5 +404,22 @@ redis://:PASSWORD@HOST:6379
 5. Перезапусти OpenCode.
 6. В чате: «открой таблицу … и суммируй столбец B» или «собери docx из этого текста».
 
-Не ставь пакет excelmcp с PyPI — нужен именно mcp-office.</value></data>
+Не ставь пакет excelmcp с PyPI — нужен именно mcp-office. MarkItDown в каталоге нет: пакет сняли с npm.</value></data>
+  <data name="GuideElasticsearch" xml:space="preserve"><value>Elasticsearch MCP (по шагам)
+
+Без своего кластера сервер сразу закрывается, и OpenCode пишет Connection closed. Поэтому без адреса я его не оставляю в конфиге.
+
+1. Нужны ES_URL, например https://localhost:9200, и API-ключ.
+2. Нажми «Добавить» и вставь оба значения.
+3. Я выключу служебный лог в stdout: иначе OpenCode не понимает ответ.
+4. Перезапусти OpenCode.
+5. В чате: «покажи индексы Elasticsearch».</value></data>
+  <data name="GuideUfp" xml:space="preserve"><value>UFP MCP (по шагам)
+
+Сервер удалённый. Его схема с кортежами OpenCode отвергает, поэтому я пускаю его через локальный прокси и переписываю items в prefixItems.
+
+1. Нажми «Добавить». Ключ не нужен.
+2. Перезапусти OpenCode.
+3. Если видишь fetch failed или Request timed out — это сеть до agenticfabricationnetwork.ai, не схема. Повтори позже.
+4. В чате можно просить котировку 3D-печати, ЧПУ или наклеек, если есть файл детали.</value></data>
 </root>

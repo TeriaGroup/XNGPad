@@ -169,7 +169,7 @@ public class McpRegistryTests
         Assert.Equal("abchash", node["environment"]!["TELEGRAM_API_HASH"]!.GetValue<string>());
         Assert.Null(node["environment"]!["API_ID"]);
         var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
-        Assert.Equal(["npx", "-y", "mcp-telegram"], cmd);
+        Assert.EndsWith("launch.mjs", cmd[^1]);
         Assert.DoesNotContain("start", cmd);
     }
 
