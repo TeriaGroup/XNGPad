@@ -38,6 +38,8 @@
   <data name="RestartOpenCode" xml:space="preserve"><value>Restart OpenCode</value></data>
   <data name="QuitOpenCode" xml:space="preserve"><value>Quit OpenCode</value></data>
   <data name="OpenCodeRestarted" xml:space="preserve"><value>OpenCode restarted.</value></data>
+  <data name="OpenCodeStarted" xml:space="preserve"><value>OpenCode started.</value></data>
+  <data name="OpenCodeMcpsDisabled" xml:space="preserve"><value>Disabled MCP so OpenCode can start:</value></data>
   <data name="OpenCodeStopped" xml:space="preserve"><value>OpenCode quit.</value></data>
   <data name="OpenCodeNotRunning" xml:space="preserve"><value>OpenCode is not running.</value></data>
   <data name="OpenCodeMissingLaunch" xml:space="preserve"><value>OpenCode was not found. Install it from Install.</value></data>
@@ -305,7 +307,8 @@ The password in the URL is a secret.</value></data>
   <data name="LogTitle" xml:space="preserve"><value>SearXNG log</value></data>
   <data name="Close" xml:space="preserve"><value>Close</value></data>
   <data name="StatusChecking" xml:space="preserve"><value>checking…</value></data>
-  <data name="RestartOpenCodeHint" xml:space="preserve"><value>Restart OpenCode, then type in chat: use searxng</value></data>
+  <data name="RestartOpenCodeHint" xml:space="preserve"><value>{0} saved. Restart OpenCode so it picks it up.</value></data>
+  <data name="RestartOpenCodeRemoved" xml:space="preserve"><value>{0} removed. Restart OpenCode.</value></data>
   <data name="ConnectedOk" xml:space="preserve"><value>OpenCode is connected. Restart OpenCode, then type in chat: use searxng</value></data>
   <data name="DisconnectedOk" xml:space="preserve"><value>OpenCode is disconnected from SearXNG.</value></data>
   <data name="SearxngStopped" xml:space="preserve"><value>SearXNG is off.</value></data>
@@ -316,6 +319,9 @@ The password in the URL is a secret.</value></data>
   <data name="ErrorDockerTimeout" xml:space="preserve"><value>Docker is taking too long. Open Docker Desktop, wait for the green whale, then “Check again”.</value></data>
   <data name="ErrorDockerDisk" xml:space="preserve"><value>Not enough disk space for the image. Free some space, then click “Enable SearXNG” again.</value></data>
   <data name="ErrorGeneric" xml:space="preserve"><value>Something went wrong. Click “Check again”.</value></data>
+  <data name="ErrorMcpNoPackage" xml:space="preserve"><value>{0}: no package. It was removed from npm, nothing to install.</value></data>
+  <data name="LogAppTitle" xml:space="preserve"><value>XNGPad journal</value></data>
+  <data name="LogDockerTitle" xml:space="preserve"><value>Container log</value></data>
   <data name="RestartPcAfterDocker" xml:space="preserve"><value>Restart the PC after installing Docker, then click “Check again”.</value></data>
   <data name="DockerNotInPath" xml:space="preserve"><value>Docker is installed but not visible yet. Restart the PC.</value></data>
   <data name="LogEmpty" xml:space="preserve"><value>No log yet.</value></data>
@@ -342,6 +348,8 @@ The password in the URL is a secret.</value></data>
   <data name="ErrorKompasDownload" xml:space="preserve"><value>Could not download kompas-mcp. Check the internet, then click Add again.</value></data>
   <data name="ErrorKompasInvite" xml:space="preserve"><value>The kompasmcp.ru invite was rejected. Click Token and paste the code or the config.json.</value></data>
   <data name="TokenHintKompas" xml:space="preserve"><value>Invite from kompasmcp.ru (invite-…) or the full config.json</value></data>
+  <data name="TokenHintEsUrl" xml:space="preserve"><value>Elasticsearch cluster URL, for example https://localhost:9200</value></data>
+  <data name="TokenHintEsKey" xml:space="preserve"><value>Elasticsearch API key</value></data>
   <data name="KompasFolderTitle" xml:space="preserve"><value>KOMPAS-3D folder (the one that contains Bin\kStudy.exe)</value></data>
   <data name="KompasFolderInvalid" xml:space="preserve"><value>kStudy.exe is not in this folder. Pick the KOMPAS-3D directory or its Bin folder.</value></data>
   <data name="QueueTitle" xml:space="preserve"><value>Download queue</value></data>

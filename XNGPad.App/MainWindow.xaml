@@ -227,8 +227,7 @@
                 <Button Content="{Binding Loc[OpenOpenCodeFolder]}" Command="{Binding OpenOpenCodeFolderCommand}" Style="{StaticResource BarButton}"/>
                 <Button Content="{Binding Loc[DisconnectOpenCode]}" Command="{Binding DisconnectOpenCodeCommand}" Style="{StaticResource BarButton}"
                         Visibility="{Binding ShowDisconnect, Converter={StaticResource BoolVis}}"/>
-                <Button Content="{Binding Loc[ShowLog]}" Command="{Binding ShowLogCommand}" Style="{StaticResource BarButton}"
-                        Visibility="{Binding ShowLog, Converter={StaticResource BoolVis}}"/>
+                <Button Content="{Binding Loc[ShowLog]}" Command="{Binding ShowLogCommand}" Style="{StaticResource BarButton}"/>
                 <TextBlock Text="{Binding Loc[SettingsLanguage]}" Style="{StaticResource FieldLabel}"/>
                 <ComboBox Style="{StaticResource DarkCombo}" SelectedIndex="{Binding EditLanguageIndex, Mode=TwoWay}" Margin="0,0,0,20">
                     <ComboBoxItem Content="{Binding DataContext.Loc[SettingsLanguageOs], RelativeSource={RelativeSource AncestorType=Window}}"/>

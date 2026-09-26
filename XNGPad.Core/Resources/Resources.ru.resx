@@ -38,6 +38,8 @@
   <data name="RestartOpenCode" xml:space="preserve"><value>Перезапустить OpenCode</value></data>
   <data name="QuitOpenCode" xml:space="preserve"><value>Выключить OpenCode</value></data>
   <data name="OpenCodeRestarted" xml:space="preserve"><value>OpenCode перезапущен.</value></data>
+  <data name="OpenCodeStarted" xml:space="preserve"><value>OpenCode запущен.</value></data>
+  <data name="OpenCodeMcpsDisabled" xml:space="preserve"><value>Отключил MCP, чтобы OpenCode запустился:</value></data>
   <data name="OpenCodeStopped" xml:space="preserve"><value>OpenCode выключен.</value></data>
   <data name="OpenCodeNotRunning" xml:space="preserve"><value>OpenCode не запущен.</value></data>
   <data name="OpenCodeMissingLaunch" xml:space="preserve"><value>OpenCode не найден. Поставь его в «Установка».</value></data>
@@ -305,7 +307,8 @@ redis://:PASSWORD@HOST:6379
   <data name="LogTitle" xml:space="preserve"><value>Лог SearXNG</value></data>
   <data name="Close" xml:space="preserve"><value>Закрыть</value></data>
   <data name="StatusChecking" xml:space="preserve"><value>проверка…</value></data>
-  <data name="RestartOpenCodeHint" xml:space="preserve"><value>Перезапусти OpenCode, в чате напиши: use searxng</value></data>
+  <data name="RestartOpenCodeHint" xml:space="preserve"><value>{0} записан. Перезапусти OpenCode, чтобы он его увидел.</value></data>
+  <data name="RestartOpenCodeRemoved" xml:space="preserve"><value>{0} убран. Перезапусти OpenCode.</value></data>
   <data name="ConnectedOk" xml:space="preserve"><value>OpenCode подключён. Перезапусти OpenCode, в чате напиши: use searxng</value></data>
   <data name="DisconnectedOk" xml:space="preserve"><value>OpenCode отключён от SearXNG.</value></data>
   <data name="SearxngStopped" xml:space="preserve"><value>SearXNG выключен.</value></data>
@@ -316,6 +319,9 @@ redis://:PASSWORD@HOST:6379
   <data name="ErrorDockerTimeout" xml:space="preserve"><value>Docker слишком долго отвечает. Открой Docker Desktop, дождись зелёного кита, потом «Проверить снова».</value></data>
   <data name="ErrorDockerDisk" xml:space="preserve"><value>На диске мало места для образа. Освободи место и нажми «Включить SearXNG» снова.</value></data>
   <data name="ErrorGeneric" xml:space="preserve"><value>Что-то пошло не так. Нажми «Проверить снова».</value></data>
+  <data name="ErrorMcpNoPackage" xml:space="preserve"><value>{0}: пакета нет. С npm его сняли, ставить нечего.</value></data>
+  <data name="LogAppTitle" xml:space="preserve"><value>Журнал XNGPad</value></data>
+  <data name="LogDockerTitle" xml:space="preserve"><value>Лог контейнера</value></data>
   <data name="RestartPcAfterDocker" xml:space="preserve"><value>Перезапусти ПК после установки Docker, затем нажми «Проверить снова».</value></data>
   <data name="DockerNotInPath" xml:space="preserve"><value>Docker установлен, но программа его не видит. Перезапусти ПК.</value></data>
   <data name="LogEmpty" xml:space="preserve"><value>Лога пока нет.</value></data>
@@ -342,6 +348,8 @@ redis://:PASSWORD@HOST:6379
   <data name="ErrorKompasDownload" xml:space="preserve"><value>Не скачался kompas-mcp. Проверь интернет и нажми «Добавить» снова.</value></data>
   <data name="ErrorKompasInvite" xml:space="preserve"><value>Инвайт kompasmcp.ru не принят. Нажми «Токен» и вставь код или сам config.json.</value></data>
   <data name="TokenHintKompas" xml:space="preserve"><value>Инвайт с kompasmcp.ru (например invite-…) или весь config.json</value></data>
+  <data name="TokenHintEsUrl" xml:space="preserve"><value>Адрес кластера Elasticsearch, например https://localhost:9200</value></data>
+  <data name="TokenHintEsKey" xml:space="preserve"><value>API-ключ Elasticsearch</value></data>
   <data name="KompasFolderTitle" xml:space="preserve"><value>Папка КОМПАС-3D (где лежит Bin\kStudy.exe)</value></data>
   <data name="KompasFolderInvalid" xml:space="preserve"><value>В этой папке нет kStudy.exe. Выбери каталог КОМПАС-3D или его Bin.</value></data>
   <data name="QueueTitle" xml:space="preserve"><value>Очередь загрузок</value></data>

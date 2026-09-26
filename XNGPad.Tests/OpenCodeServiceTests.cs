@@ -238,4 +238,24 @@ public class OpenCodeServiceTests : IDisposable
         Assert.Contains("keep", exa["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
         Assert.Contains("exa", _svc.ListRemoteIds(path));
     }
+
+    [Fact]
+    public void DisableUnresponsive_TurnsOffDeadCommand()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "dead": { "type": "local", "command": ["node", "-e", "process.exit(1)"], "enabled": true },
+                "kept": { "type": "local", "command": ["node", "-e", "process.exit(1)"], "enabled": false }
+              }
+            }
+            """);
+        var off = _svc.DisableUnresponsive(path, 4000);
+        Assert.Contains("dead", off);
+        Assert.DoesNotContain("kept", off);
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        Assert.False(root["mcp"]!["dead"]!["enabled"]!.GetValue<bool>());
+        Assert.False(root["mcp"]!["kept"]!["enabled"]!.GetValue<bool>());
+    }
 }

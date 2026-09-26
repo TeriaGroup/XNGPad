@@ -53,7 +53,7 @@ public static class McpCatalog
         new("gitlab", "GitLab", "McpGitlabHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/gitlab", "@modelcontextprotocol/server-gitlab", GuideKey: "GuideGitlab", TokenUrl: "https://gitlab.com/-/user_settings/personal_access_tokens", TokenEnvKey: "GITLAB_PERSONAL_ACCESS_TOKEN"),
         new("google-maps", "Google Maps", "McpMapsHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/google-maps", "@modelcontextprotocol/server-google-maps", GuideKey: "GuideMaps", TokenUrl: "https://console.cloud.google.com/apis/credentials", TokenEnvKey: "GOOGLE_MAPS_API_KEY"),
         new("kubernetes", "mcp-server-kubernetes", "McpK8sHint", "https://github.com/Flux159/mcp-server-kubernetes", "mcp-server-kubernetes"),
-        new("markitdown", "MarkItDown", "McpMarkitdownHint", "https://github.com/microsoft/markitdown", ""),
+
         new("memory", "Memory", "McpMemoryHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/memory", "@modelcontextprotocol/server-memory"),
         new("playwright", "Playwright", "McpPlaywrightHint", "https://github.com/microsoft/playwright-mcp", "@playwright/mcp"),
         new("postgres", "PostgreSQL", "McpPostgresHint", "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres", "@modelcontextprotocol/server-postgres", GuideKey: "GuidePostgres", TokenEnvKey: "POSTGRES_CONNECTION_STRING", TokenAsArg: true),
@@ -81,7 +81,7 @@ public static class McpCatalog
         new("mermaid", "Mermaid", "McpMermaidHint", "https://github.com/hustcc/mcp-mermaid", "mcp-mermaid"),
         new("hackernews", "Hacker News", "McpHnHint", "https://github.com/pskill9/hn-server", "hn-server"),
         new("qdrant", "Qdrant", "McpQdrantHint", "https://github.com/qdrant/mcp-server-qdrant", "mcp-server-qdrant"),
-        new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch"),
+        new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch", GuideKey: "GuideGeneric", TokenUrl: "https://www.elastic.co/docs/deploy-manage/api-keys", TokenEnvKey: "ES_URL", TokenEnvKey2: "ES_API_KEY"),
         new("time", "Time", "McpTimeHint", "https://github.com/yokingma/time-mcp", "time-mcp"),
         new("telegram", "Telegram", "McpTelegramHint", "https://github.com/dryeab/mcp-telegram", "mcp-telegram", McpExtra.Telegram, GuideKey: "GuideTelegram", TokenUrl: "https://my.telegram.org/apps", TokenEnvKey: "API_ID", TokenEnvKey2: "API_HASH"),
         new("kompas-3d", "КОМПАС-3D", "McpKompasHint", "https://github.com/dwnmf/KOMPAS-3D-MCP-bin", "", McpExtra.Kompas, GuideKey: "GuideKompas", TokenUrl: "https://kompasmcp.ru/"),
@@ -108,6 +108,12 @@ public static class McpCatalog
             env[def.TokenEnvKey2] = secret2;
         }
 
+        if (def.Id == "elasticsearch")
+        {
+            env ??= new JsonObject();
+            env["OTEL_LOG_LEVEL"] = "none";
+        }
+
         if (def.Extra == McpExtra.Telegram)
         {
             env = new JsonObject();
@@ -131,7 +137,7 @@ public static class McpCatalog
             return Remote(def, secret, env);
 
         if (string.IsNullOrEmpty(def.Package))
-            throw new XNGPadException("ErrorGeneric");
+            throw new XNGPadException("ErrorMcpNoPackage", def.DisplayName);
 
         var args = new List<string> { "npx", "-y", def.Package };
         switch (def.Extra)
@@ -176,7 +182,7 @@ public static class McpCatalog
         {
             ["KOMPAS_MCP_EXE"] = KompasExePath()
         };
-        var study = ResolveStudyExe(settings.KompasInstallDir);
+        var study = ResolveStudyExe(settings.KompasInstallDir) ?? ResolveStudyExe(@"C:\APPs\ascon\kompas") ?? ResolveStudyExe(@"C:\APPs\kompas");
         if (study != null)
             env["KOMPAS_EXE"] = study;
         var node = Local([NodeExe(), KompasProxyPath()], env);

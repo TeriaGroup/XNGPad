@@ -80,22 +80,18 @@
                      Foreground="{StaticResource AccentBrush}" Background="Transparent" BorderThickness="0"/>
         <TextBlock DockPanel.Dock="Top" Text="{Binding BusyText}" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,6"
                    Visibility="{Binding BusyText, Converter={StaticResource StrVis}}"/>
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" MaxHeight="96"
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" MaxHeight="140"
                    Visibility="{Binding ShowDownloadQueue, Converter={StaticResource BoolVis}}">
             <TextBlock DockPanel.Dock="Top" Text="{Binding Loc[QueueTitle]}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding DownloadJobs}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,0,0,3">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontSize="12"/>
-                                <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontSize="12"
-                                           Foreground="{StaticResource MutedBrush}" Margin="10,0,0,0"/>
-                            </Grid>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding StatusText}" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{StaticResource MutedBrush}"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

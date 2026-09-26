@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -148,11 +149,154 @@ public sealed class OpenCodeService
         changed |= RepairRemoteNodes(mcp);
         changed |= RepairUfpNode(mcp);
         changed |= RepairKompasNode(mcp);
+        changed |= RepairElasticsearchNode(mcp);
         if (!changed)
             return false;
         WriteBackup(path);
         AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
         return true;
+    }
+
+    public IReadOnlyList<string> DisableUnresponsive(string path, int timeoutMs = 8000)
+    {
+        if (!File.Exists(path) || !TryParseObject(ReadConfig(path), out var root) || root == null)
+            return [];
+        if (root["mcp"] is not JsonObject mcp)
+            return [];
+        var targets = new List<(string Id, JsonObject Node)>();
+        foreach (var entry in mcp)
+        {
+            if (entry.Value is not JsonObject node || entry.Key.Length == 0)
+                continue;
+            if (node["enabled"] is JsonValue en && en.TryGetValue<bool>(out var on) && !on)
+                continue;
+            if (node["command"] is not JsonArray cmd || cmd.Count == 0)
+                continue;
+            targets.Add((entry.Key, node));
+        }
+
+        var failed = new System.Collections.Concurrent.ConcurrentBag<string>();
+        Parallel.ForEach(targets, new ParallelOptions { MaxDegreeOfParallelism = 6 }, item =>
+        {
+            var kind = Probe(item.Node, timeoutMs);
+            if (kind == ProbeKind.Dead)
+                failed.Add(item.Id);
+        });
+        if (failed.IsEmpty)
+            return [];
+        foreach (var id in failed)
+        {
+            if (mcp[id] is JsonObject node)
+                node["enabled"] = false;
+        }
+
+        WriteBackup(path);
+        AtomicWrite(path, root.ToJsonString(WriteOptions) + Environment.NewLine);
+        return failed.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private enum ProbeKind { Ok, Dead, Slow }
+
+    private static bool IsNpx(JsonObject node)
+    {
+        var cmd = node["command"]!.AsArray().Select(x => x?.GetValue<string>() ?? "");
+        return cmd.Any(x => x.Equals("npx", StringComparison.OrdinalIgnoreCase) || x.Contains("npx.cmd", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static ProbeKind Probe(JsonObject node, int timeoutMs)
+    {
+        Process? proc = null;
+        try
+        {
+            proc = Process.Start(BuildProbe(node));
+            if (proc == null)
+                return ProbeKind.Dead;
+            proc.StandardInput.WriteLine("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"xngpad","version":"1.2.0"}}}""");
+            proc.StandardInput.Flush();
+            var deadline = Environment.TickCount64 + timeoutMs;
+            while (Environment.TickCount64 < deadline)
+            {
+                var remaining = (int)Math.Max(1, deadline - Environment.TickCount64);
+                var read = proc.StandardOutput.ReadLineAsync();
+                if (!read.Wait(remaining))
+                    return proc.HasExited ? ProbeKind.Dead : ProbeKind.Slow;
+                var line = read.Result;
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    if (proc.HasExited)
+                        return ProbeKind.Dead;
+                    continue;
+                }
+
+                if (line.Contains("\"error\"", StringComparison.Ordinal))
+                    return ProbeKind.Dead;
+                if (line.Contains("\"result\"", StringComparison.Ordinal) || line.Contains("\"jsonrpc\"", StringComparison.Ordinal))
+                    return ProbeKind.Ok;
+            }
+
+            return proc.HasExited ? ProbeKind.Dead : ProbeKind.Slow;
+        }
+        catch
+        {
+            return ProbeKind.Dead;
+        }
+        finally
+        {
+            if (proc != null)
+            {
+                try
+                {
+                    if (!proc.HasExited)
+                        proc.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                }
+
+                proc.Dispose();
+            }
+        }
+    }
+
+    private static ProcessStartInfo BuildProbe(JsonObject node)
+    {
+        var cmd = node["command"]!.AsArray().Select(x => x?.GetValue<string>() ?? "").Where(x => x.Length > 0).ToArray();
+        var psi = new ProcessStartInfo
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        var file = cmd[0];
+        if (file.Equals("npx", StringComparison.OrdinalIgnoreCase) || file.Equals("npm", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase))
+        {
+            psi.FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
+            psi.ArgumentList.Add("/d");
+            psi.ArgumentList.Add("/s");
+            psi.ArgumentList.Add("/c");
+            psi.ArgumentList.Add(file);
+        }
+        else
+        {
+            psi.FileName = file;
+        }
+
+        foreach (var arg in cmd.Skip(1))
+            psi.ArgumentList.Add(arg);
+        if (node["cwd"] is JsonValue cwd && cwd.TryGetValue<string>(out var dir) && Directory.Exists(dir))
+            psi.WorkingDirectory = dir;
+        if (node["environment"] is JsonObject env)
+        {
+            foreach (var pair in env)
+            {
+                if (pair.Value is JsonValue value && value.TryGetValue<string>(out var text))
+                    psi.Environment[pair.Key] = text;
+            }
+        }
+
+        return psi;
     }
 
     private static bool RepairTelegramNode(JsonObject mcp)
@@ -298,6 +442,25 @@ public sealed class OpenCodeService
         if (UfpProxy.IsProxied(node))
             return false;
         mcp["ufp"] = UfpProxy.Node();
+        return true;
+    }
+
+    private static bool RepairElasticsearchNode(JsonObject mcp)
+    {
+        if (mcp["elasticsearch"] is not JsonObject node)
+            return false;
+        var url = (node["environment"] as JsonObject)?["ES_URL"]?.GetValue<string>();
+        if (!string.IsNullOrWhiteSpace(url))
+        {
+            var env = node["environment"] as JsonObject ?? new JsonObject();
+            if (env["OTEL_LOG_LEVEL"]?.GetValue<string>() == "none")
+                return false;
+            env["OTEL_LOG_LEVEL"] = "none";
+            node["environment"] = env;
+            return true;
+        }
+
+        mcp.Remove("elasticsearch");
         return true;
     }
 

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json.Nodes;
 using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -423,52 +424,95 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnOpenCodeRunningChanged(bool value) => OnPropertyChanged(nameof(OpenCodePowerText));
 
-    [RelayCommand]
-    private void ToggleOpenCode()
-    {
-        if (IsOpenCodeProcessRunning())
-        {
-            QuitOpenCode();
-            OpenCodeRunning = false;
-            return;
-        }
+    private int _launching;
 
-        LaunchOpenCode();
-        OpenCodeRunning = IsOpenCodeProcessRunning();
+    [RelayCommand]
+    private async Task ToggleOpenCode()
+    {
+        if (Interlocked.Exchange(ref _launching, 1) == 1)
+            return;
+        try
+        {
+            if (IsOpenCodeProcessRunning())
+            {
+                QuitOpenCode();
+                OpenCodeRunning = false;
+                return;
+            }
+
+            await LaunchPreparedAsync(restart: false);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _launching, 0);
+        }
     }
 
     [RelayCommand]
-    private void LaunchOpenCode()
+    private async Task LaunchOpenCode()
     {
-        var path = InstallService.FindOpenCode();
-        if (string.IsNullOrWhiteSpace(path) || path == "OpenCode" || !File.Exists(path))
-        {
-            Banner = Loc.Get("OpenCodeMissingLaunch");
-            BannerLevel = "warn";
+        if (Interlocked.Exchange(ref _launching, 1) == 1)
             return;
+        try
+        {
+            await LaunchPreparedAsync(restart: false);
         }
-
-        StartOpenCode(path);
-        OpenCodeRunning = true;
+        finally
+        {
+            Interlocked.Exchange(ref _launching, 0);
+        }
     }
 
     [RelayCommand]
     private async Task RestartOpenCodeAsync()
     {
-        var path = InstallService.FindOpenCode();
-        StopOpenCode();
-        await Task.Delay(700);
-        path = InstallService.FindOpenCode() ?? path;
-        if (string.IsNullOrWhiteSpace(path) || path == "OpenCode" || !File.Exists(path))
+        if (Interlocked.Exchange(ref _launching, 1) == 1)
+            return;
+        try
+        {
+            StopOpenCode();
+            await Task.Delay(700);
+            await LaunchPreparedAsync(restart: true);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _launching, 0);
+        }
+    }
+
+    private async Task LaunchPreparedAsync(bool restart)
+    {
+        var exe = InstallService.FindOpenCode();
+        if (string.IsNullOrWhiteSpace(exe) || exe == "OpenCode" || !File.Exists(exe))
         {
             Banner = Loc.Get("OpenCodeMissingLaunch");
             BannerLevel = "warn";
             return;
         }
 
-        StartOpenCode(path);
+        var cfg = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+        IReadOnlyList<string> disabled = [];
+        try
+        {
+            _opencode.RepairMcp(cfg);
+            disabled = await Task.Run(() => _opencode.DisableUnresponsive(cfg));
+            foreach (var id in disabled)
+                AppLog.Write(id + ": no handshake, disabled so OpenCode can start");
+        }
+        catch
+        {
+        }
+
+        StartOpenCode(exe);
         OpenCodeRunning = true;
-        Banner = Loc.Get("OpenCodeRestarted");
+        if (disabled.Count > 0)
+        {
+            Banner = Loc.Get("OpenCodeMcpsDisabled") + " " + string.Join(", ", disabled);
+            BannerLevel = "warn";
+            return;
+        }
+
+        Banner = Loc.Get(restart ? "OpenCodeRestarted" : "OpenCodeStarted");
         BannerLevel = "ok";
     }
 
@@ -543,32 +587,29 @@ public partial class MainViewModel : ObservableObject
         ShellOpen.Folder(file);
     }
 
-    [RelayCommand(CanExecute = nameof(CanRun))]
+    [RelayCommand]
     private async Task ShowLogAsync()
     {
-        await RunBusyAsync("BusyRefreshing", async ct =>
+        var journal = AppLog.Text();
+        if (string.IsNullOrWhiteSpace(journal))
+            journal = Loc.Get("LogEmpty");
+        var text = Loc.Get("LogAppTitle") + Environment.NewLine + journal;
+        if (_dockerKind == DockerKind.Ok && _containerExists)
         {
-            if (_dockerKind != DockerKind.Ok)
+            try
             {
-                Banner = Loc.Get(_wslHint ? "ErrorWsl" : "ErrorDaemon");
-                BannerLevel = "err";
-                return;
+                var name = _settings.ResolvedContainerName();
+                var docker = await _docker.LogsAsync(name, 200, CancellationToken.None);
+                text += Environment.NewLine + Environment.NewLine + Loc.Get("LogDockerTitle") + " " + name + Environment.NewLine;
+                text += string.IsNullOrWhiteSpace(docker) ? Loc.Get("LogEmpty") : docker;
             }
-
-            var name = _settings.ResolvedContainerName();
-            var info = await _docker.InspectAsync(name, ct);
-            if (!info.Exists)
+            catch (Exception ex)
             {
-                Banner = Loc.Get("ErrorNoContainer");
-                BannerLevel = "warn";
-                return;
+                text += Environment.NewLine + Describe(ex);
             }
+        }
 
-            var text = await _docker.LogsAsync(name, 80, ct);
-            if (string.IsNullOrWhiteSpace(text))
-                text = Loc.Get("LogEmpty");
-            _dialogs.ShowLog(Loc.Get("LogTitle"), text);
-        });
+        _dialogs.ShowLog(Loc.Get("LogTitle"), text);
     }
 
     [RelayCommand]
@@ -681,7 +722,12 @@ public partial class MainViewModel : ObservableObject
         string? secret2 = null;
         if (!_opencode.HasMcp(path, row.Id) && row.Def.TokenEnvKey2 != null)
         {
-            var pair = _dialogs.AskTwoSecrets(row.Id, Loc.Get("TokenHintTelegramId"), Loc.Get("TokenHintTelegramHash"), row.TokenUrl);
+            var es = row.Def.TokenEnvKey == "ES_URL";
+            var pair = _dialogs.AskTwoSecrets(
+                row.Id,
+                Loc.Get(es ? "TokenHintEsUrl" : "TokenHintTelegramId"),
+                Loc.Get(es ? "TokenHintEsKey" : "TokenHintTelegramHash"),
+                row.TokenUrl);
             if (pair == null)
                 return;
             secret = pair.Value.First;
@@ -696,9 +742,14 @@ public partial class MainViewModel : ObservableObject
                     return;
             }
 
-            var folder = _dialogs.AskFolder(Loc.Get("KompasFolderTitle"), SuggestKompasFolder());
+            var folder = SuggestKompasFolder();
             if (folder == null)
-                return;
+            {
+                folder = _dialogs.AskFolder(Loc.Get("KompasFolderTitle"), null);
+                if (folder == null)
+                    return;
+            }
+
             if (McpCatalog.ResolveStudyExe(folder) == null)
             {
                 Banner = Loc.Get("KompasFolderInvalid");
@@ -720,7 +771,7 @@ public partial class MainViewModel : ObservableObject
         {
             _opencode.RemoveMcp(path, row.Id);
             RefreshInstallStatus();
-            Banner = Loc.Get("RestartOpenCodeHint");
+            Banner = Loc.Get("RestartOpenCodeRemoved", row.Title);
             BannerLevel = "ok";
             return;
         }
@@ -785,16 +836,20 @@ public partial class MainViewModel : ObservableObject
                     if (McpCatalog.NeedsPython(item.Row.Def))
                         await _install.EnsureOfficeMcpAsync(Lifetime.Token);
                     UnhideMcpId(item.Row.Id);
-                    _opencode.UpsertMcp(path, item.Row.Id, McpCatalog.CreateNode(item.Row.Def, _settings, item.Secret, item.Secret2));
+                    var node = McpCatalog.CreateNode(item.Row.Def, _settings, item.Secret, item.Secret2);
+                    _opencode.UpsertMcp(path, item.Row.Id, node);
                     RememberUsed(item.Row.Id);
+                    AppLog.Write(item.Row.Title + ": " + DescribeNode(node));
                     item.Job.StatusText = Loc.Get("QueueDone");
                     item.Job.IsActive = false;
-                    Banner = Loc.Get(item.Secret != null ? "TokenSaved" : "RestartOpenCodeHint");
+                    Banner = Loc.Get(item.Secret != null ? "TokenSaved" : "RestartOpenCodeHint", item.Row.Title);
                     BannerLevel = "ok";
                 }
                 catch (Exception ex)
                 {
-                    item.Job.StatusText = Loc.Get("QueueError");
+                    var reason = Describe(ex);
+                    AppLog.Write(item.Row.Title + ": " + reason);
+                    item.Job.StatusText = reason.Length > 80 ? reason[..77] + "…" : reason;
                     item.Job.IsActive = false;
                     ShowError(ex);
                 }
@@ -863,7 +918,12 @@ public partial class MainViewModel : ObservableObject
 
         if (row.Def.TokenEnvKey2 != null)
         {
-            var pair = _dialogs.AskTwoSecrets(row.Id, Loc.Get("TokenHintTelegramId"), Loc.Get("TokenHintTelegramHash"), row.TokenUrl);
+            var es = row.Def.TokenEnvKey == "ES_URL";
+            var pair = _dialogs.AskTwoSecrets(
+                row.Id,
+                Loc.Get(es ? "TokenHintEsUrl" : "TokenHintTelegramId"),
+                Loc.Get(es ? "TokenHintEsKey" : "TokenHintTelegramHash"),
+                row.TokenUrl);
             if (pair == null)
                 return;
             secret = pair.Value.First;
@@ -1433,6 +1493,28 @@ public partial class MainViewModel : ObservableObject
             IsBusy = false;
             BusyText = "";
         }
+    }
+
+    private string Describe(Exception ex)
+    {
+        if (ex is XNGPadException sd)
+        {
+            var msg = Loc.Get(sd.Key, sd.Args);
+            if (!string.IsNullOrWhiteSpace(sd.Detail))
+                msg += " — " + sd.Detail;
+            return msg;
+        }
+
+        return ex.Message;
+    }
+
+    private static string DescribeNode(JsonObject node)
+    {
+        if (node["url"] is JsonValue url)
+            return "remote " + url.GetValue<string>();
+        if (node["command"] is JsonArray cmd)
+            return string.Join(' ', cmd.Select(x => x?.ToString()?.Trim('"') ?? ""));
+        return node["type"]?.ToString() ?? "mcp";
     }
 
     private void ShowError(Exception ex)

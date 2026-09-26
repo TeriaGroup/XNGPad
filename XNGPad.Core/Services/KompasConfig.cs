@@ -62,46 +62,95 @@ public static class KompasConfig
           if (kompasRunning()) return;
           console.error("starting KOMPAS-3D");
           spawn(kompas, [], { detached: true, stdio: "ignore" }).unref();
-          for (let i = 0; i < 60 && !kompasRunning(); i++) sleep(500);
-          sleep(3000);
+          for (let i = 0; i < 20 && !kompasRunning(); i++) sleep(250);
         }
-        launchKompas();
         function fixSchema(node) {
           if (!node || typeof node !== "object") return;
           if (Array.isArray(node)) { for (const item of node) fixSchema(item); return; }
           if (Array.isArray(node.items)) { node.prefixItems = node.items; node.items = false; }
           for (const value of Object.values(node)) fixSchema(value);
         }
-        function frame(text) {
-          const body = Buffer.from(text, "utf8");
-          return Buffer.concat([Buffer.from(`Content-Length: ${body.length}\r\n\r\n`, "utf8"), body]);
+        let clientMode = null;
+        function writeClient(text) {
+          let body = text;
+          try {
+            const msg = JSON.parse(text);
+            if (msg.result) fixSchema(msg.result);
+            body = JSON.stringify(msg);
+          } catch {}
+          if (clientMode === "lsp") {
+            const raw = Buffer.from(body, "utf8");
+            process.stdout.write(`Content-Length: ${raw.length}\r\n\r\n`);
+            process.stdout.write(raw);
+          } else {
+            process.stdout.write(body + "\n");
+          }
         }
-        function pump(input, output, rewrite) {
-          let buf = Buffer.alloc(0);
-          input.on("data", (chunk) => {
-            buf = Buffer.concat([buf, chunk]);
+        launchKompas();
+        const child = spawn(exe, [], { cwd: path.dirname(exe), stdio: ["pipe", "pipe", "inherit"], windowsHide: true });
+        let childBuf = Buffer.alloc(0);
+        child.stdout.on("data", (chunk) => {
+          childBuf = Buffer.concat([childBuf, chunk]);
+          const head = childBuf.subarray(0, Math.min(childBuf.length, 20)).toString("utf8");
+          if (head.includes("Content-Length")) {
             while (true) {
-              const headerEnd = buf.indexOf("\r\n\r\n");
+              const headerEnd = childBuf.indexOf("\r\n\r\n");
               if (headerEnd < 0) break;
-              const header = buf.subarray(0, headerEnd).toString("utf8");
+              const header = childBuf.subarray(0, headerEnd).toString("utf8");
               const match = /Content-Length:\s*(\d+)/i.exec(header);
               if (!match) break;
               const length = Number(match[1]);
               const start = headerEnd + 4;
-              if (buf.length < start + length) break;
-              let body = buf.subarray(start, start + length).toString("utf8");
-              buf = buf.subarray(start + length);
-              if (rewrite) {
-                try { const msg = JSON.parse(body); if (msg.result) fixSchema(msg.result); body = JSON.stringify(msg); } catch {}
-              }
-              output.write(frame(body));
+              if (childBuf.length < start + length) break;
+              const body = childBuf.subarray(start, start + length).toString("utf8");
+              childBuf = childBuf.subarray(start + length);
+              writeClient(body);
             }
-          });
-          input.on("end", () => output.end());
+            return;
+          }
+          while (true) {
+            const i = childBuf.indexOf(0x0a);
+            if (i < 0) break;
+            const line = childBuf.subarray(0, i).toString("utf8").replace(/\r$/, "");
+            childBuf = childBuf.subarray(i + 1);
+            if (line.trim()) writeClient(line);
+          }
+        });
+        function writeChild(text) {
+          if (text.trim()) child.stdin.write(text.trim() + "\n");
         }
-        const child = spawn(exe, [], { cwd: path.dirname(exe), stdio: ["pipe", "pipe", "inherit"], windowsHide: true });
-        pump(process.stdin, child.stdin, false);
-        pump(child.stdout, process.stdout, true);
+        let inBuf = Buffer.alloc(0);
+        function pump() {
+          if (!clientMode) {
+            const head = inBuf.subarray(0, Math.min(inBuf.length, 24)).toString("utf8").trimStart();
+            if (!head) return;
+            clientMode = head.startsWith("{") || head.startsWith("[") ? "line" : "lsp";
+          }
+          if (clientMode === "line") {
+            while (true) {
+              const i = inBuf.indexOf(0x0a);
+              if (i < 0) break;
+              const line = inBuf.subarray(0, i).toString("utf8").replace(/\r$/, "");
+              inBuf = inBuf.subarray(i + 1);
+              writeChild(line);
+            }
+            return;
+          }
+          while (true) {
+            const headerEnd = inBuf.indexOf("\r\n\r\n");
+            if (headerEnd < 0) break;
+            const header = inBuf.subarray(0, headerEnd).toString("utf8");
+            const match = /Content-Length:\s*(\d+)/i.exec(header);
+            if (!match) break;
+            const length = Number(match[1]);
+            const start = headerEnd + 4;
+            if (inBuf.length < start + length) break;
+            const body = inBuf.subarray(start, start + length).toString("utf8");
+            inBuf = inBuf.subarray(start + length);
+            writeChild(body);
+          }
+        }
+        process.stdin.on("data", (chunk) => { inBuf = Buffer.concat([inBuf, chunk]); pump(); });
         child.on("exit", (code) => process.exit(code ?? 1));
         """;
 

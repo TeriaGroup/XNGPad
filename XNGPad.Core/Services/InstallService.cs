@@ -162,6 +162,7 @@ public sealed class InstallService
     public async Task EnsureKompasMcpAsync(CancellationToken ct = default, string? inviteOrJson = null)
     {
         await EnsureKompasExeAsync(ct).ConfigureAwait(false);
+        KompasConfig.EnsureProxy();
         await EnsureKompasConfigAsync(inviteOrJson, ct).ConfigureAwait(false);
     }
 
