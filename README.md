@@ -4,7 +4,7 @@ Windows-пульт для локального [SearXNG](https://docs.searxng.or
 
 A Windows remote for local [SearXNG](https://docs.searxng.org/) in Docker and MCP servers in [OpenCode](https://opencode.ai). No hand-editing JSON.
 
-Релиз: [v1.3.0](https://github.com/TeriaGroup/XNGPad/releases/tag/v1.3.0)
+Релиз: [v1.4.0](https://github.com/TeriaGroup/XNGPad/releases/tag/v1.4.0)
 
 ---
 
@@ -23,6 +23,9 @@ XNGPad сам не ищет в интернете. Он:
 - для КОМПАС-3D при добавлении спрашивает инвайт и папку с `kStudy.exe`, затем сам запускает КОМПАС
 - для Telegram, КОМПАС, Office, Elasticsearch и UFP есть пошаговый гайд в карточке «Подробнее». Telegram ставится локальным запуском: свой api_id, вход в браузере, код в приложении Telegram, запасной вход по QR
 - для токенов открывает короткое окно и сам прописывает ключ
+- MATLAB MCP ставится в уже установленный MATLAB. Сам MATLAB пад не качает
+- Mathcad Prime 12 MCP открывает листы через штатный COM
+- Mermaid пад ставит сам, без сломанного `npx`: сервер и браузер для схем
 - UI на русском и английском; описания с Registry в русском режиме переводятся
 
 Docker внутрь себя не встраивает и молча не ставит. SearXNG слушает только localhost.
@@ -79,6 +82,9 @@ XNGPad is not a search engine. It:
 - for KOMPAS-3D, asks for the invite and the folder that contains `kStudy.exe`, then starts KOMPAS itself
 - Telegram, KOMPAS, Office, Elasticsearch, and UFP have a step-by-step guide on the card. Telegram is installed through a local launcher: your own api_id, browser sign-in, the code in the Telegram app, QR as a fallback
 - asks for API tokens in a small window and writes them into the OpenCode config
+- MATLAB MCP is installed into an existing MATLAB. XNGPad does not download MATLAB itself
+- Mathcad Prime 12 MCP opens worksheets through the built-in COM API
+- Mermaid is installed by the pad, without the broken `npx` step: the server and the diagram browser
 - UI in Russian and English; Registry descriptions are translated when the UI is Russian
 
 It does not bundle Docker and will not install it silently. SearXNG binds to localhost only.

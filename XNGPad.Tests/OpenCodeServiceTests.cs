@@ -198,6 +198,29 @@ public class OpenCodeServiceTests : IDisposable
         Assert.Contains("Bearer hf_test", root["mcp"]!["huggingface"]!["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
         Assert.Null(root["mcp"]!["agentic-news"]);
         Assert.Equal(120000, root["mcp"]!["memory"]!["timeout"]!.GetValue<int>());
+        Assert.False(_svc.RepairMcp(path));
+        var again = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        Assert.Contains("Bearer hf_test", again["mcp"]!["huggingface"]!["environment"]!["MCP_REMOTE_HEADERS"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void DisableUnresponsive_SkipsHeavyLocalApps()
+    {
+        var path = Path.Combine(_dir, "opencode.json");
+        File.WriteAllText(path, """
+            {
+              "mcp": {
+                "matlab": { "type": "local", "command": ["C:\\Windows\\System32\\cmd.exe", "/c", "exit", "1"], "enabled": true },
+                "dead": { "type": "local", "command": ["C:\\Windows\\System32\\cmd.exe", "/c", "exit", "1"], "enabled": true }
+              }
+            }
+            """);
+        var failed = _svc.DisableUnresponsive(path, 4000);
+        Assert.DoesNotContain("matlab", failed);
+        Assert.Contains("dead", failed);
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        Assert.True(root["mcp"]!["matlab"]!["enabled"]!.GetValue<bool>());
+        Assert.False(root["mcp"]!["dead"]!["enabled"]!.GetValue<bool>());
     }
 
     [Fact]

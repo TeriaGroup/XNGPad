@@ -97,15 +97,21 @@
                 </ItemsControl>
             </ScrollViewer>
         </DockPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBlock Text="Node.js" Foreground="{StaticResource MutedBrush}"/>
             <TextBlock Text="{Binding NodeInstallStatus}" FontWeight="SemiBold" Margin="6,0,20,0"/>
             <TextBlock Text="Docker" Foreground="{StaticResource MutedBrush}"/>
             <TextBlock Text="{Binding DockerInstallStatus}" FontWeight="SemiBold" Margin="6,0,20,0"/>
             <TextBlock Text="OpenCode" Foreground="{StaticResource MutedBrush}"/>
-            <TextBlock Text="{Binding OpenCodeInstallStatus}" FontWeight="SemiBold" Margin="6,0,0,0"/>
-        </StackPanel>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="{Binding OpenCodeInstallStatus}" FontWeight="SemiBold" Margin="6,0,16,0"/>
+            <TextBlock Text="{Binding Loc[LabelMatlab]}" Foreground="{StaticResource MutedBrush}"/>
+            <TextBlock Text="{Binding MatlabInstallStatus}" FontWeight="SemiBold" Margin="6,0,16,0"/>
+            <TextBlock Text="{Binding Loc[LabelMatlabMcp]}" Foreground="{StaticResource MutedBrush}"/>
+            <TextBlock Text="{Binding MatlabMcpInstallStatus}" FontWeight="SemiBold" Margin="6,0,16,4"/>
+            <TextBlock Text="{Binding Loc[LabelMathcadMcp]}" Foreground="{StaticResource MutedBrush}"/>
+            <TextBlock Text="{Binding MathcadMcpInstallStatus}" FontWeight="SemiBold" Margin="6,0,0,4"/>
+        </WrapPanel>
+        <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <Button Content="{Binding Loc[InstallNode]}" Command="{Binding InstallNodeCommand}" Style="{StaticResource AccentButton}"
                     Height="32" FontSize="13" Margin="0,0,8,0" Padding="12,0"
                     Visibility="{Binding ShowInstallNode, Converter={StaticResource BoolVis}}"/>
@@ -113,9 +119,15 @@
                     Height="32" FontSize="13" Margin="0,0,8,0" Padding="12,0"
                     Visibility="{Binding ShowInstallDocker, Converter={StaticResource BoolVis}}"/>
             <Button Content="{Binding Loc[InstallOpenCode]}" Command="{Binding InstallOpenCodeCommand}" Style="{StaticResource AccentButton}"
-                    Height="32" FontSize="13" Padding="12,0"
+                    Height="32" FontSize="13" Margin="0,0,8,0" Padding="12,0"
                     Visibility="{Binding ShowInstallOpenCode, Converter={StaticResource BoolVis}}"/>
-        </StackPanel>
+            <Button Content="{Binding Loc[InstallMatlabMcp]}" Command="{Binding InstallMatlabMcpCommand}" Style="{StaticResource AccentButton}"
+                    Height="32" FontSize="13" Margin="0,0,8,0" Padding="12,0"
+                    Visibility="{Binding ShowInstallMatlabMcp, Converter={StaticResource BoolVis}}"/>
+            <Button Content="{Binding Loc[InstallMathcadMcp]}" Command="{Binding InstallMathcadMcpCommand}" Style="{StaticResource AccentButton}"
+                    Height="32" FontSize="13" Padding="12,0"
+                    Visibility="{Binding ShowInstallMathcadMcp, Converter={StaticResource BoolVis}}"/>
+        </WrapPanel>
         <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

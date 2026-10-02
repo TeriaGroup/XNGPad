@@ -22,6 +22,8 @@ public static class McpRegistry
         try
         {
             var list = await FetchAsync(http, ct).ConfigureAwait(false);
+            if (list.Count == 0)
+                throw new HttpRequestException("empty mcp registry");
             WriteCache(cachePath, list);
             return list;
         }

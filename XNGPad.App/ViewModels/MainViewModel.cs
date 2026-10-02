@@ -100,6 +100,11 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool showInstallNode;
     [ObservableProperty] private bool showInstallDocker;
     [ObservableProperty] private bool showInstallOpenCode;
+    [ObservableProperty] private bool showInstallMatlabMcp;
+    [ObservableProperty] private bool showInstallMathcadMcp;
+    [ObservableProperty] private string matlabInstallStatus = "";
+    [ObservableProperty] private string matlabMcpInstallStatus = "";
+    [ObservableProperty] private string mathcadMcpInstallStatus = "";
 
     public bool IsHome => !IsSettingsOpen;
 
@@ -162,7 +167,14 @@ public partial class MainViewModel : ObservableObject
 
     private bool CanRun() => !IsBusy;
 
-    partial void OnQueueBusyChanged(bool value) => OnPropertyChanged(nameof(ShowInstallProgress));
+    private bool CanInstall() => !IsBusy && !QueueBusy;
+
+    partial void OnQueueBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ShowInstallProgress));
+        InstallMatlabMcpCommand.NotifyCanExecuteChanged();
+        InstallMathcadMcpCommand.NotifyCanExecuteChanged();
+    }
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -180,11 +192,14 @@ public partial class MainViewModel : ObservableObject
         InstallNodeCommand.NotifyCanExecuteChanged();
         InstallDockerCommand.NotifyCanExecuteChanged();
         InstallOpenCodeCommand.NotifyCanExecuteChanged();
+        InstallMatlabMcpCommand.NotifyCanExecuteChanged();
+        InstallMathcadMcpCommand.NotifyCanExecuteChanged();
     }
 
     public async Task InitializeAsync()
     {
         await RefreshAsync();
+        _ = EnsureConfiguredMermaidAsync();
         _ = IdleRefreshLoop();
     }
 
@@ -494,6 +509,7 @@ public partial class MainViewModel : ObservableObject
         IReadOnlyList<string> disabled = [];
         try
         {
+            await EnsureConfiguredMermaidAsync();
             _opencode.RepairMcp(cfg);
             disabled = await Task.Run(() => _opencode.DisableUnresponsive(cfg));
             foreach (var id in disabled)
@@ -587,7 +603,7 @@ public partial class MainViewModel : ObservableObject
         ShellOpen.Folder(file);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRun))]
     private async Task ShowLogAsync()
     {
         var journal = AppLog.Text();
@@ -692,6 +708,89 @@ public partial class MainViewModel : ObservableObject
         });
     }
 
+    [RelayCommand(CanExecute = nameof(CanInstall))]
+    private async Task InstallMatlabMcpAsync()
+    {
+        if (_install.IsMatlabMcpInstalled())
+        {
+            Banner = Loc.Get("InstallMatlabMcpAlready");
+            BannerLevel = "ok";
+            RefreshInstallStatus();
+            return;
+        }
+
+        if (McpCatalog.ResolveMatlabRoot(_settings.MatlabInstallDir) == null)
+        {
+            Banner = Loc.Get("NeedMatlabFirst");
+            BannerLevel = "warn";
+            return;
+        }
+
+        await RunBusyAsync("BusyInstallingMatlabMcp", async ct =>
+        {
+            await _install.InstallMatlabMcpAsync(_settings.MatlabInstallDir, ct);
+            RefreshInstallStatus();
+            Banner = Loc.Get("InstallMatlabMcpOk");
+            BannerLevel = "ok";
+        });
+    }
+
+    private Task? _mermaidEnsure;
+
+    private Task EnsureConfiguredMermaidAsync()
+    {
+        if (_mermaidEnsure is { IsCompleted: false })
+            return _mermaidEnsure;
+        return _mermaidEnsure = EnsureConfiguredMermaidCoreAsync();
+    }
+
+    private async Task EnsureConfiguredMermaidCoreAsync()
+    {
+        var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
+        if (!_opencode.HasMcp(path, "mermaid"))
+            return;
+        if (_install.IsMermaidInstalled())
+        {
+            try
+            {
+                _opencode.RepairMcp(path);
+            }
+            catch
+            {
+            }
+
+            return;
+        }
+
+        await RunBusyAsync("BusyInstallingMermaid", async ct =>
+        {
+            await _install.EnsureMermaidMcpAsync(ct);
+            _opencode.RepairMcp(path);
+            Banner = Loc.Get("InstallMermaidOk");
+            BannerLevel = "ok";
+        });
+    }
+
+    [RelayCommand(CanExecute = nameof(CanInstall))]
+    private async Task InstallMathcadMcpAsync()
+    {
+        if (_install.IsMathcadMcpInstalled())
+        {
+            Banner = Loc.Get("InstallMathcadMcpAlready");
+            BannerLevel = "ok";
+            RefreshInstallStatus();
+            return;
+        }
+
+        await RunBusyAsync("BusyInstallingMathcadMcp", async ct =>
+        {
+            await _install.EnsureMathcadMcpAsync(ct);
+            RefreshInstallStatus();
+            Banner = Loc.Get("InstallMathcadMcpOk");
+            BannerLevel = "ok";
+        });
+    }
+
     [RelayCommand(CanExecute = nameof(CanRun))]
     private async Task InstallOpenCodeAsync()
     {
@@ -740,6 +839,26 @@ public partial class MainViewModel : ObservableObject
                 BannerLevel = "warn";
                 return;
             }
+        }
+        else if (!_opencode.HasMcp(path, row.Id) && row.Def.Extra == McpExtra.Matlab)
+        {
+            var folder = McpCatalog.ResolveMatlabRoot(_settings.MatlabInstallDir) ?? McpCatalog.ResolveMatlabRoot(null);
+            if (folder == null)
+            {
+                folder = _dialogs.AskFolder(Loc.Get("MatlabFolderTitle"), null);
+                if (folder == null)
+                    return;
+            }
+
+            if (McpCatalog.ResolveMatlabRoot(folder) == null)
+            {
+                Banner = Loc.Get("MatlabFolderInvalid");
+                BannerLevel = "warn";
+                return;
+            }
+
+            _settings.MatlabInstallDir = McpCatalog.ResolveMatlabRoot(folder);
+            _settingsService.Save(_settings);
         }
         else if (!_opencode.HasMcp(path, row.Id) && row.Def.Extra == McpExtra.Kompas)
         {
@@ -841,8 +960,14 @@ public partial class MainViewModel : ObservableObject
                     var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
                     if (McpCatalog.NeedsKompasBin(item.Row.Def))
                         await _install.EnsureKompasMcpAsync(Lifetime.Token, item.Secret);
+                    if (McpCatalog.NeedsMatlabBin(item.Row.Def))
+                        await _install.InstallMatlabMcpAsync(_settings.MatlabInstallDir, Lifetime.Token);
                     if (McpCatalog.NeedsPython(item.Row.Def))
                         await _install.EnsureOfficeMcpAsync(Lifetime.Token);
+                    if (McpCatalog.NeedsMathcadMcp(item.Row.Def))
+                        await _install.EnsureMathcadMcpAsync(Lifetime.Token);
+                    if (McpCatalog.NeedsMermaid(item.Row.Def))
+                        await _install.EnsureMermaidMcpAsync(Lifetime.Token);
                     UnhideMcpId(item.Row.Id);
                     var node = McpCatalog.CreateNode(item.Row.Def, _settings, item.Secret, item.Secret2);
                     _opencode.UpsertMcp(path, item.Row.Id, node);
@@ -971,16 +1096,12 @@ public partial class MainViewModel : ObservableObject
             2 => "en",
             _ => ""
         };
-        _settings = new AppSettings
-        {
-            Port = port,
-            ContainerName = name,
-            SearxngUrl = url.TrimEnd('/'),
-            OpenCodeConfigPath = string.IsNullOrWhiteSpace(EditOpenCodePath) ? null : EditOpenCodePath.Trim(),
-            Language = lang,
-            HiddenMcpIds = [.. _settings.HiddenMcpIds],
-            UsedMcpIds = [.. _settings.UsedMcpIds]
-        };
+        _settings = _settings.WithEditor(
+            port,
+            name,
+            url.TrimEnd('/'),
+            string.IsNullOrWhiteSpace(EditOpenCodePath) ? null : EditOpenCodePath.Trim(),
+            lang);
         _settingsService.Save(_settings);
         ApplyLanguage(SettingsService.ResolveLanguage(_settings));
         IsSettingsOpen = false;
@@ -1006,12 +1127,20 @@ public partial class MainViewModel : ObservableObject
         var nodeOk = _node.IsNpxAvailable() || _install.IsNodeInstalled();
         var dockerOk = _docker.IsInstalled();
         var ocOk = _install.IsOpenCodeInstalled();
+        var matlabOk = _install.IsMatlabInstalled(_settings.MatlabInstallDir);
+        var matlabMcpOk = _install.IsMatlabMcpInstalled();
+        var mathcadMcpOk = _install.IsMathcadMcpInstalled();
         NodeInstallStatus = Loc.Get(nodeOk ? "StatusInstalled" : "StatusMissing");
         DockerInstallStatus = Loc.Get(dockerOk ? "StatusInstalled" : "StatusMissing");
         OpenCodeInstallStatus = Loc.Get(ocOk ? "StatusInstalled" : "StatusMissing");
+        MatlabInstallStatus = Loc.Get(matlabOk ? "StatusInstalled" : "StatusMissing");
+        MatlabMcpInstallStatus = Loc.Get(matlabMcpOk ? "StatusInstalled" : "StatusMissing");
+        MathcadMcpInstallStatus = Loc.Get(mathcadMcpOk ? "StatusInstalled" : "StatusMissing");
         ShowInstallNode = !nodeOk;
         ShowInstallDocker = !dockerOk;
         ShowInstallOpenCode = !ocOk;
+        ShowInstallMatlabMcp = !matlabMcpOk;
+        ShowInstallMathcadMcp = !mathcadMcpOk;
         var path = _opencode.ResolvePath(_settings.OpenCodeConfigPath);
         try
         {

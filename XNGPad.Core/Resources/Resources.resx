@@ -48,6 +48,18 @@
   <data name="InstallNode" xml:space="preserve"><value>Install Node.js</value></data>
   <data name="InstallDockerApp" xml:space="preserve"><value>Install Docker</value></data>
   <data name="InstallOpenCode" xml:space="preserve"><value>Install OpenCode</value></data>
+  <data name="InstallMatlabMcp" xml:space="preserve"><value>Install MATLAB MCP</value></data>
+  <data name="InstallMatlabMcpOk" xml:space="preserve"><value>MATLAB MCP is installed. The toolbox is in MATLAB. Restart OpenCode and click Add on the MATLAB card.</value></data>
+  <data name="InstallMatlabMcpAlready" xml:space="preserve"><value>MATLAB MCP is already installed.</value></data>
+  <data name="LabelMatlab" xml:space="preserve"><value>MATLAB</value></data>
+  <data name="LabelMatlabMcp" xml:space="preserve"><value>MATLAB MCP</value></data>
+  <data name="LabelMathcadMcp" xml:space="preserve"><value>Mathcad MCP</value></data>
+  <data name="InstallMathcadMcp" xml:space="preserve"><value>Install Mathcad MCP</value></data>
+  <data name="InstallMathcadMcpOk" xml:space="preserve"><value>Mathcad MCP is installed. When Mathcad Prime starts on its own, click Add on the card and restart OpenCode.</value></data>
+  <data name="InstallMathcadMcpAlready" xml:space="preserve"><value>Mathcad MCP is already installed.</value></data>
+  <data name="BusyInstallingMathcadMcp" xml:space="preserve"><value>Installing Mathcad MCP…</value></data>
+  <data name="NeedMatlabFirst" xml:space="preserve"><value>Install MATLAB first. XNGPad does not download the MATLAB installer.</value></data>
+  <data name="BusyInstallingMatlabMcp" xml:space="preserve"><value>Installing MATLAB MCP… MATLAB will open while this runs.</value></data>
   <data name="InstallMcpTitle" xml:space="preserve"><value>OpenCode MCP</value></data>
   <data name="StatusInstalled" xml:space="preserve"><value>installed</value></data>
   <data name="StatusMissing" xml:space="preserve"><value>missing</value></data>
@@ -139,7 +151,7 @@ The key is a secret. Do not commit the config.</value></data>
   <data name="McpSupabaseHint" xml:space="preserve"><value>Supabase projects. Needs SUPABASE_ACCESS_TOKEN.</value></data>
   <data name="McpBrowserbaseHint" xml:space="preserve"><value>Browserbase cloud browser. Needs an API key.</value></data>
   <data name="McpJinaHint" xml:space="preserve"><value>Jina URL reader and embeddings. Needs JINA_API_KEY.</value></data>
-  <data name="McpMermaidHint" xml:space="preserve"><value>Renders Mermaid diagrams.</value></data>
+  <data name="McpMermaidHint" xml:space="preserve"><value>Renders Mermaid diagrams. XNGPad installs the server and browser itself, without the broken npx step.</value></data>
   <data name="McpHnHint" xml:space="preserve"><value>Hacker News feed and comments.</value></data>
   <data name="McpQdrantHint" xml:space="preserve"><value>Qdrant vector search.</value></data>
   <data name="McpEsHint" xml:space="preserve"><value>Elasticsearch search.</value></data>
@@ -414,6 +426,36 @@ Without your own cluster the process exits and OpenCode shows Connection closed.
 3. I turn off the telemetry log on stdout, or OpenCode cannot read the reply.
 4. Restart OpenCode.
 5. In chat: “list Elasticsearch indexes”.</value></data>
+  <data name="McpMatlabHint" xml:space="preserve"><value>Starts the installed MATLAB and runs code. MATLAB must already be on this PC.</value></data>
+  <data name="MatlabFolderTitle" xml:space="preserve"><value>MATLAB folder (the one that contains bin\matlab.exe)</value></data>
+  <data name="MatlabFolderInvalid" xml:space="preserve"><value>bin\matlab.exe is not here. Pick the MATLAB install directory, not Bin.</value></data>
+  <data name="ErrorMatlabDownload" xml:space="preserve"><value>Could not download the MATLAB MCP server.</value></data>
+  <data name="ErrorMatlabMissing" xml:space="preserve"><value>MATLAB was not found. Pick the folder that contains bin\matlab.exe.</value></data>
+  <data name="ErrorMatlabMcpSetup" xml:space="preserve"><value>Could not install the MATLAB MCP toolbox. If MATLAB does not start, setup will not finish.</value></data>
+  <data name="ErrorMathcadDownload" xml:space="preserve"><value>Could not download or install the Mathcad MCP server.</value></data>
+  <data name="ErrorMermaidInstall" xml:space="preserve"><value>Could not install the Mermaid MCP. The browser used to draw diagrams did not download.</value></data>
+  <data name="BusyInstallingMermaid" xml:space="preserve"><value>Installing the Mermaid MCP and the diagram browser…</value></data>
+  <data name="InstallMermaidOk" xml:space="preserve"><value>Mermaid MCP is installed. Restart OpenCode.</value></data>
+  <data name="McpMathcadHint" xml:space="preserve"><value>Opens Mathcad Prime worksheets, calculates, and reads results. Prime must already be installed.</value></data>
+  <data name="GuideMathcad" xml:space="preserve"><value>Mathcad MCP (steps)
+
+Mathcad Prime 12 must already be installed. XNGPad does not install Mathcad and does not bypass its license. If Prime does not start, calculations will not run.
+
+1. Click Install Mathcad MCP or Add on the card. I download the server and install it in its own Python environment.
+2. When Prime starts on its own, restart OpenCode.
+3. In chat: “open C:\...\file.mcdx”, “set input F = 10 kN”, “recalculate and tell me the result”.
+
+A normal variable is invisible until it is marked Input or Output in the worksheet. The server can also build a worksheet from short text.</value></data>
+  <data name="GuideMatlab" xml:space="preserve"><value>MATLAB MCP (steps)
+
+MATLAB R2021a or newer must already be installed. XNGPad does not install MATLAB.
+
+1. Click Install MATLAB MCP. I download the official matlab-mcp-server and install its toolbox into MATLAB. MATLAB opens while this runs.
+2. Click Add. If I cannot find the folder, pick a directory such as C:\Program Files\MATLAB\R2025b, not the bin folder.
+3. Restart OpenCode.
+4. In chat: “compute eigenvalues in MATLAB” or “run this script”.
+
+The server starts MATLAB itself. If MATLAB does not start, the MCP will not work either.</value></data>
   <data name="GuideUfp" xml:space="preserve"><value>UFP MCP (steps)
 
 The server is remote. OpenCode rejects its tuple schema, so I send it through a local proxy and rewrite items to prefixItems.

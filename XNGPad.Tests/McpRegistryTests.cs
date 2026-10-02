@@ -212,6 +212,56 @@ public class McpRegistryTests
     }
 
     [Fact]
+    public void CreateNode_Matlab_PointsAtInstall()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xngpad-matlab-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "bin"));
+        File.WriteAllText(Path.Combine(root, "bin", "matlab.exe"), "");
+        try
+        {
+            var def = McpCatalog.All.First(x => x.Id == "matlab");
+            var node = McpCatalog.CreateNode(def, new AppSettings { MatlabInstallDir = root });
+            var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+            Assert.EndsWith("matlab-mcp-server.exe", cmd[0], StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("--matlab-root=" + root, cmd);
+            Assert.Contains("--disable-telemetry=true", cmd);
+            Assert.False(McpCatalog.NeedsNpx(def));
+            Assert.Null(McpCatalog.ResolveMatlabRoot(@"C:\no-such-matlab\R2099"));
+            var setup = McpCatalog.MatlabSetupArgs(root);
+            Assert.Equal("--setup-matlab", setup[0]);
+            Assert.Contains("--matlab-root=" + root, setup);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CreateNode_Mathcad_UsesLocalVenv()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "mathcad");
+        var node = McpCatalog.CreateNode(def, new AppSettings());
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.EndsWith(Path.Combine("venv", "Scripts", "python.exe"), cmd[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("-m", cmd[1]);
+        Assert.Equal("mathcad_prime_mcp.server", cmd[2]);
+        Assert.False(McpCatalog.NeedsNpx(def));
+    }
+
+    [Fact]
+    public void CreateNode_Mermaid_UsesLocalEntry()
+    {
+        var def = McpCatalog.All.First(x => x.Id == "mermaid");
+        var node = McpCatalog.CreateNode(def, new AppSettings());
+        var cmd = node["command"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray();
+        Assert.EndsWith("index.js", cmd[^1], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("mcp-mermaid", cmd[^1], StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(cmd, x => x.Equals("npx", StringComparison.OrdinalIgnoreCase));
+        Assert.False(McpCatalog.NeedsNpx(def));
+    }
+
+    [Fact]
     public void CreateNode_Ufp_UsesSchemaProxy()
     {
         var def = McpCatalog.All.First(x => x.Id == "ufp");

@@ -48,6 +48,18 @@
   <data name="InstallNode" xml:space="preserve"><value>Установить Node.js</value></data>
   <data name="InstallDockerApp" xml:space="preserve"><value>Установить Docker</value></data>
   <data name="InstallOpenCode" xml:space="preserve"><value>Установить OpenCode</value></data>
+  <data name="InstallMatlabMcp" xml:space="preserve"><value>Установить MATLAB MCP</value></data>
+  <data name="InstallMatlabMcpOk" xml:space="preserve"><value>MATLAB MCP установлен. Тулбокс поставлен в MATLAB. Перезапусти OpenCode и нажми «Добавить» у карточки MATLAB.</value></data>
+  <data name="InstallMatlabMcpAlready" xml:space="preserve"><value>MATLAB MCP уже установлен.</value></data>
+  <data name="LabelMatlab" xml:space="preserve"><value>MATLAB</value></data>
+  <data name="LabelMatlabMcp" xml:space="preserve"><value>MATLAB MCP</value></data>
+  <data name="LabelMathcadMcp" xml:space="preserve"><value>Mathcad MCP</value></data>
+  <data name="InstallMathcadMcp" xml:space="preserve"><value>Установить Mathcad MCP</value></data>
+  <data name="InstallMathcadMcpOk" xml:space="preserve"><value>Mathcad MCP установлен. Когда Mathcad Prime сам открывается, нажми «Добавить» у карточки и перезапусти OpenCode.</value></data>
+  <data name="InstallMathcadMcpAlready" xml:space="preserve"><value>Mathcad MCP уже установлен.</value></data>
+  <data name="BusyInstallingMathcadMcp" xml:space="preserve"><value>Ставлю Mathcad MCP…</value></data>
+  <data name="NeedMatlabFirst" xml:space="preserve"><value>Сначала установи MATLAB. Пад сам дистрибутив не качает.</value></data>
+  <data name="BusyInstallingMatlabMcp" xml:space="preserve"><value>Ставлю MATLAB MCP… MATLAB на это время откроется.</value></data>
   <data name="InstallMcpTitle" xml:space="preserve"><value>MCP для OpenCode</value></data>
   <data name="StatusInstalled" xml:space="preserve"><value>есть</value></data>
   <data name="StatusMissing" xml:space="preserve"><value>нет</value></data>
@@ -139,7 +151,7 @@
   <data name="McpSupabaseHint" xml:space="preserve"><value>Проекты Supabase. Нужен SUPABASE_ACCESS_TOKEN.</value></data>
   <data name="McpBrowserbaseHint" xml:space="preserve"><value>Облачный браузер Browserbase. Нужен API-ключ.</value></data>
   <data name="McpJinaHint" xml:space="preserve"><value>Читает URL и эмбеддинги Jina. Нужен JINA_API_KEY.</value></data>
-  <data name="McpMermaidHint" xml:space="preserve"><value>Рисует диаграммы Mermaid.</value></data>
+  <data name="McpMermaidHint" xml:space="preserve"><value>Рисует диаграммы Mermaid. Пад сам ставит сервер и браузер, без сломанного npx.</value></data>
   <data name="McpHnHint" xml:space="preserve"><value>Лента и комментарии Hacker News.</value></data>
   <data name="McpQdrantHint" xml:space="preserve"><value>Векторный поиск Qdrant.</value></data>
   <data name="McpEsHint" xml:space="preserve"><value>Поиск Elasticsearch.</value></data>
@@ -414,6 +426,36 @@ redis://:PASSWORD@HOST:6379
 3. Я выключу служебный лог в stdout: иначе OpenCode не понимает ответ.
 4. Перезапусти OpenCode.
 5. В чате: «покажи индексы Elasticsearch».</value></data>
+  <data name="McpMatlabHint" xml:space="preserve"><value>Запускает установленный MATLAB и выполняет код. Нужен MATLAB на этом ПК.</value></data>
+  <data name="MatlabFolderTitle" xml:space="preserve"><value>Папка MATLAB (где лежит bin\matlab.exe)</value></data>
+  <data name="MatlabFolderInvalid" xml:space="preserve"><value>В этой папке нет bin\matlab.exe. Выбери каталог установки MATLAB, не Bin.</value></data>
+  <data name="ErrorMatlabDownload" xml:space="preserve"><value>Не удалось скачать MATLAB MCP.</value></data>
+  <data name="ErrorMatlabMissing" xml:space="preserve"><value>MATLAB не найден. Нужен каталог с bin\matlab.exe.</value></data>
+  <data name="ErrorMatlabMcpSetup" xml:space="preserve"><value>Не удалось поставить тулбокс MATLAB MCP. Если MATLAB не стартует, установщик тоже не закончится.</value></data>
+  <data name="ErrorMathcadDownload" xml:space="preserve"><value>Не удалось скачать или поставить Mathcad MCP.</value></data>
+  <data name="ErrorMermaidInstall" xml:space="preserve"><value>Не удалось поставить Mermaid MCP. Браузер для отрисовки схем не скачался.</value></data>
+  <data name="BusyInstallingMermaid" xml:space="preserve"><value>Ставлю Mermaid MCP и браузер для схем…</value></data>
+  <data name="InstallMermaidOk" xml:space="preserve"><value>Mermaid MCP установлен. Перезапусти OpenCode.</value></data>
+  <data name="McpMathcadHint" xml:space="preserve"><value>Открывает листы Mathcad Prime, считает и читает результаты. Нужен установленный Prime.</value></data>
+  <data name="GuideMathcad" xml:space="preserve"><value>Mathcad MCP (по шагам)
+
+Нужен уже установленный Mathcad Prime 12. Пад сам Mathcad не ставит и лицензию не обходит. Если Prime не стартует, расчёты не пойдут.
+
+1. Нажми «Установить Mathcad MCP» или «Добавить» у карточки. Я скачаю сервер и поставлю его в отдельный Python.
+2. Когда Prime сам открывается, перезапусти OpenCode.
+3. В чате: «открой лист C:\...\file.mcdx», «поставь вход F = 10 кН», «пересчитай и скажи результат».
+
+Обычная переменная не видна, пока в листе её не пометить как Input или Output. Сервер также умеет собрать лист из короткого текста.</value></data>
+  <data name="GuideMatlab" xml:space="preserve"><value>MATLAB MCP (по шагам)
+
+Нужен уже установленный MATLAB R2021a или новее. Пад сам MATLAB не ставит.
+
+1. Нажми «Установить MATLAB MCP». Я скачаю официальный matlab-mcp-server и поставлю тулбокс в MATLAB. MATLAB на это время откроется.
+2. Нажми «Добавить». Если папку не нашёл, выбери каталог вроде C:\Program Files\MATLAB\R2025b, не папку bin.
+3. Перезапусти OpenCode.
+4. В чате: «посчитай в MATLAB собственные числа матрицы» или «запусти скрипт …».
+
+Сервер сам откроет MATLAB. Если MATLAB не стартует, MCP тоже не заработает.</value></data>
   <data name="GuideUfp" xml:space="preserve"><value>UFP MCP (по шагам)
 
 Сервер удалённый. Его схема с кортежами OpenCode отвергает, поэтому я пускаю его через локальный прокси и переписываю items в prefixItems.

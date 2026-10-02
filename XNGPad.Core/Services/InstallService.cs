@@ -45,7 +45,7 @@ public sealed class InstallService
                 ["install", "-e", "--id", "OpenJS.NodeJS.LTS", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"],
                 InstallTimeout,
                 ct).ConfigureAwait(false);
-            if (IsNodeInstalled() || result.Success)
+            if (IsNodeInstalled())
                 return;
         }
 
@@ -138,25 +138,206 @@ public sealed class InstallService
 
     public async Task EnsureOfficeMcpAsync(CancellationToken ct = default)
     {
-        if (FindPython() == null && FindPyLauncher() == null)
-        {
-            var winget = FindWinget();
-            if (winget == null)
-                throw new XNGPadException("ErrorPythonMissing");
-            var result = await _runner.RunAsync(
-                winget,
-                ["install", "-e", "--id", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"],
-                InstallTimeout,
-                ct).ConfigureAwait(false);
-            if (FindPython() == null && FindPyLauncher() == null && !result.Success)
-                throw new XNGPadException("ErrorPythonMissing") { Detail = DockerError.ShortMessage(result.Combined) };
-        }
-
+        await EnsurePythonAsync(ct).ConfigureAwait(false);
         var cmd = PythonCommand().ToList();
         cmd.AddRange(["-m", "pip", "install", "--user", "mcp-office"]);
         var pip = await _runner.RunAsync(cmd[0], cmd.Skip(1).ToList(), InstallTimeout, ct).ConfigureAwait(false);
         if (!pip.Success)
             throw new XNGPadException("ErrorInstallFailed") { Detail = DockerError.ShortMessage(pip.Combined) };
+    }
+
+    public const string MatlabMcpDownloadUrl =
+        "https://github.com/matlab/matlab-mcp-server/releases/latest/download/matlab-mcp-server-windows-x64.exe";
+
+    public const long MatlabMcpMinBytes = 15_000_000;
+
+    public bool IsMatlabInstalled(string? savedDir = null) => McpCatalog.FindMatlabInstall(savedDir) != null;
+
+    public bool IsMatlabMcpInstalled() =>
+        File.Exists(McpCatalog.MatlabExePath()) && McpCatalog.IsMatlabMcpToolboxInstalled();
+
+    public async Task EnsureMatlabMcpAsync(CancellationToken ct = default)
+    {
+        var exe = McpCatalog.MatlabExePath();
+        if (File.Exists(exe) && new FileInfo(exe).Length >= MatlabMcpMinBytes)
+            return;
+        TryDelete(exe);
+        var dir = Path.GetDirectoryName(exe)!;
+        Directory.CreateDirectory(dir);
+        await DownloadAsync(MatlabMcpDownloadUrl, exe, ct).ConfigureAwait(false);
+        if (!File.Exists(exe))
+            throw new XNGPadException("ErrorMatlabDownload");
+    }
+
+    public async Task InstallMatlabMcpAsync(string? matlabRoot, CancellationToken ct = default)
+    {
+        var root = McpCatalog.FindMatlabInstall(matlabRoot);
+        if (root == null)
+            throw new XNGPadException("ErrorMatlabMissing");
+
+        await EnsureMatlabMcpAsync(ct).ConfigureAwait(false);
+        if (McpCatalog.IsMatlabMcpToolboxInstalled())
+            return;
+
+        var result = await _runner.RunAsync(
+            McpCatalog.MatlabExePath(),
+            McpCatalog.MatlabSetupArgs(root),
+            InstallTimeout,
+            ct).ConfigureAwait(false);
+        if (!result.Success || !McpCatalog.IsMatlabMcpToolboxInstalled())
+            throw new XNGPadException("ErrorMatlabMcpSetup") { Detail = DockerError.ShortMessage(result.Combined) };
+    }
+
+    public const string MermaidPackage = "mcp-mermaid@0.4.1";
+
+    public const string MermaidChromiumUrl =
+        "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-win64.zip";
+
+    public const string MermaidHeadlessUrl =
+        "https://cdn.playwright.dev/builds/cft/153.0.8010.12/win64/chrome-headless-shell-win64.zip";
+
+    public bool IsMermaidInstalled() => File.Exists(McpCatalog.MermaidEntry()) && IsMermaidChromiumInstalled();
+
+    public static bool IsMermaidChromiumInstalled() =>
+        BrowserReady(MermaidChromiumDir(), Path.Combine("chrome-win64", "chrome.exe"))
+        && BrowserReady(MermaidHeadlessDir(), Path.Combine("chrome-headless-shell-win64", "chrome-headless-shell.exe"));
+
+    public static string MermaidChromiumDir() => PlaywrightBrowserDir("chromium-1243");
+
+    public static string MermaidHeadlessDir() => PlaywrightBrowserDir("chromium_headless_shell-1243");
+
+    private static string PlaywrightBrowserDir(string name) => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "ms-playwright",
+        name);
+
+    private static bool BrowserReady(string dir, string relativeExe) =>
+        File.Exists(Path.Combine(dir, relativeExe))
+        && File.Exists(Path.Combine(dir, "INSTALLATION_COMPLETE"));
+
+    public async Task EnsureMermaidMcpAsync(CancellationToken ct = default)
+    {
+        if (!File.Exists(McpCatalog.MermaidEntry()))
+        {
+            var npm = FindNpm() ?? throw new XNGPadException("ErrorNodeMissing");
+            var dir = McpCatalog.MermaidDir();
+            Directory.CreateDirectory(dir);
+            await File.WriteAllTextAsync(
+                Path.Combine(dir, "package.json"),
+                "{\"name\":\"xngpad-mermaid\",\"private\":true}\n",
+                ct).ConfigureAwait(false);
+            var install = await _runner.RunAsync(
+                npm,
+                ["install", "--ignore-scripts", MermaidPackage, "--prefix", dir],
+                InstallTimeout,
+                ct).ConfigureAwait(false);
+            if (!install.Success || !File.Exists(McpCatalog.MermaidEntry()))
+                throw new XNGPadException("ErrorMermaidInstall") { Detail = DockerError.ShortMessage(install.Combined) };
+        }
+
+        if (IsMermaidChromiumInstalled())
+            return;
+
+        await InstallBrowserZipAsync(MermaidChromiumDir(), MermaidChromiumUrl, "chrome-win64.zip", ct).ConfigureAwait(false);
+        await InstallBrowserZipAsync(MermaidHeadlessDir(), MermaidHeadlessUrl, "chrome-headless-shell-win64.zip", ct).ConfigureAwait(false);
+        if (!IsMermaidChromiumInstalled())
+            throw new XNGPadException("ErrorMermaidInstall");
+    }
+
+    private async Task InstallBrowserZipAsync(string dir, string url, string zipName, CancellationToken ct)
+    {
+        Directory.CreateDirectory(dir);
+        var zip = Path.Combine(dir, zipName);
+        await DownloadAsync(url, zip, ct).ConfigureAwait(false);
+        ZipFile.ExtractToDirectory(zip, dir, overwriteFiles: true);
+        TryDelete(zip);
+        await File.WriteAllTextAsync(Path.Combine(dir, "INSTALLATION_COMPLETE"), "", ct).ConfigureAwait(false);
+    }
+
+    public const string MathcadMcpZipUrl =
+        "https://github.com/fqfqfqff/mathcad-prime-mcp/archive/045db7d4066f4c4fa3bd25bcf1eb8e5439c19edf.zip";
+
+    public bool IsMathcadMcpInstalled() =>
+        File.Exists(McpCatalog.MathcadPython())
+        && File.Exists(Path.Combine(McpCatalog.MathcadSrc(), "mathcad_prime_mcp", "server.py"));
+
+    public async Task EnsureMathcadMcpAsync(CancellationToken ct = default)
+    {
+        if (IsMathcadMcpInstalled())
+            return;
+
+        await EnsurePythonAsync(ct).ConfigureAwait(false);
+        var dir = McpCatalog.MathcadDir();
+        Directory.CreateDirectory(dir);
+        var zip = Path.Combine(Path.GetTempPath(), "mathcad-prime-mcp.zip");
+        await DownloadAsync(MathcadMcpZipUrl, zip, ct).ConfigureAwait(false);
+        var extract = Path.Combine(Path.GetTempPath(), "mathcad-prime-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            ZipFile.ExtractToDirectory(zip, extract, overwriteFiles: true);
+            var server = Directory.EnumerateFiles(extract, "server.py", SearchOption.AllDirectories)
+                .FirstOrDefault(p => p.Contains($"{Path.DirectorySeparatorChar}mathcad_prime_mcp{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                ?? throw new XNGPadException("ErrorMathcadDownload");
+            var repo = Directory.GetParent(server)?.Parent?.Parent?.FullName
+                ?? throw new XNGPadException("ErrorMathcadDownload");
+            CopyTree(repo, dir, skipSchemaProxy: false);
+        }
+        finally
+        {
+            TryDeleteDir(extract);
+        }
+
+        var venv = Path.Combine(dir, "venv");
+        var py = Path.Combine(venv, "Scripts", "python.exe");
+        if (!File.Exists(py))
+        {
+            var basePy = PythonCommand();
+            var created = await _runner.RunAsync(
+                basePy[0],
+                basePy.Skip(1).Concat(["-m", "venv", venv]).ToList(),
+                InstallTimeout,
+                ct).ConfigureAwait(false);
+            if (!File.Exists(py))
+                throw new XNGPadException("ErrorPythonMissing") { Detail = DockerError.ShortMessage(created.Combined) };
+        }
+
+        var pip = await _runner.RunAsync(
+            py,
+            ["-m", "pip", "install", "mcp>=2", "pywin32", "psutil", "pywinauto", "pillow", "python-docx"],
+            InstallTimeout,
+            ct).ConfigureAwait(false);
+        if (!pip.Success || !IsMathcadMcpInstalled())
+            throw new XNGPadException("ErrorMathcadDownload") { Detail = DockerError.ShortMessage(pip.Combined) };
+
+        var post = Path.Combine(venv, "Scripts", "pywin32_postinstall.py");
+        if (File.Exists(post))
+            await _runner.RunAsync(py, [post, "-install"], InstallTimeout, ct).ConfigureAwait(false);
+
+        var src = McpCatalog.MathcadSrc().Replace("'", "");
+        var imported = await _runner.RunAsync(
+            py,
+            ["-c", "import sys; sys.path.insert(0, r'" + src + "'); import mathcad_prime_mcp.server"],
+            InstallTimeout,
+            ct).ConfigureAwait(false);
+        if (!imported.Success)
+            throw new XNGPadException("ErrorMathcadDownload") { Detail = DockerError.ShortMessage(imported.Combined) };
+    }
+
+    private async Task EnsurePythonAsync(CancellationToken ct)
+    {
+        if (FindPython() != null || FindPyLauncher() != null)
+            return;
+
+        var winget = FindWinget();
+        if (winget == null)
+            throw new XNGPadException("ErrorPythonMissing");
+        var result = await _runner.RunAsync(
+            winget,
+            ["install", "-e", "--id", "Python.Python.3.12", "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity"],
+            InstallTimeout,
+            ct).ConfigureAwait(false);
+        if (FindPython() == null && FindPyLauncher() == null)
+            throw new XNGPadException("ErrorPythonMissing") { Detail = DockerError.ShortMessage(result.Combined) };
     }
 
     public async Task EnsureKompasMcpAsync(CancellationToken ct = default, string? inviteOrJson = null)
@@ -185,25 +366,25 @@ public sealed class InstallService
         ZipFile.ExtractToDirectory(zip, extract, overwriteFiles: true);
         var found = Directory.EnumerateFiles(extract, "kompas-mcp.exe", SearchOption.AllDirectories).FirstOrDefault()
             ?? throw new XNGPadException("ErrorKompasDownload");
-        CopyTree(Path.GetDirectoryName(found)!, dir);
+        CopyTree(Path.GetDirectoryName(found)!, dir, skipSchemaProxy: true);
 
         if (!File.Exists(exe))
             throw new XNGPadException("ErrorKompasDownload");
     }
 
-    private static void CopyTree(string source, string dest)
+    private static void CopyTree(string source, string dest, bool skipSchemaProxy)
     {
         Directory.CreateDirectory(dest);
         foreach (var file in Directory.EnumerateFiles(source))
         {
             var name = Path.GetFileName(file);
-            if (name.Equals("schema-proxy.mjs", StringComparison.OrdinalIgnoreCase))
+            if (skipSchemaProxy && name.Equals("schema-proxy.mjs", StringComparison.OrdinalIgnoreCase))
                 continue;
             File.Copy(file, Path.Combine(dest, name), overwrite: true);
         }
 
         foreach (var sub in Directory.EnumerateDirectories(source))
-            CopyTree(sub, Path.Combine(dest, Path.GetFileName(sub)));
+            CopyTree(sub, Path.Combine(dest, Path.GetFileName(sub)), skipSchemaProxy);
     }
 
     private async Task EnsureKompasConfigAsync(string? inviteOrJson, CancellationToken ct)
@@ -393,11 +574,54 @@ public sealed class InstallService
 
     private async Task DownloadAsync(string url, string dest, CancellationToken ct)
     {
-        using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        await using var input = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        await using var output = File.Create(dest);
-        await input.CopyToAsync(output, ct).ConfigureAwait(false);
+        var partial = dest + ".partial";
+        TryDelete(partial);
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.TryAddWithoutValidation("User-Agent", "XNGPad");
+            using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+            await using (var input = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+            await using (var output = File.Create(partial))
+                await input.CopyToAsync(output, ct).ConfigureAwait(false);
+            File.Move(partial, dest, overwrite: true);
+        }
+        catch
+        {
+            TryDelete(partial);
+            throw;
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private static void TryDeleteDir(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private static IEnumerable<string> ToolDirs()

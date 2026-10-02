@@ -10,6 +10,7 @@ public sealed class AppSettings
     public List<string> HiddenMcpIds { get; set; } = [];
     public List<string> UsedMcpIds { get; set; } = [];
     public string? KompasInstallDir { get; set; }
+    public string? MatlabInstallDir { get; set; }
 
     public string ResolvedUrl()
     {
@@ -30,6 +31,22 @@ public sealed class AppSettings
         return Port is > 0 and <= 65535 ? Port : Constants.Port;
     }
 
+    public AppSettings WithEditor(int port, string containerName, string searxngUrl, string? openCodeConfigPath, string language)
+    {
+        return new AppSettings
+        {
+            Port = port,
+            ContainerName = containerName,
+            SearxngUrl = searxngUrl,
+            OpenCodeConfigPath = openCodeConfigPath,
+            Language = language,
+            HiddenMcpIds = [.. HiddenMcpIds],
+            UsedMcpIds = [.. UsedMcpIds],
+            KompasInstallDir = KompasInstallDir,
+            MatlabInstallDir = MatlabInstallDir
+        };
+    }
+
     public AppSettings Clone()
     {
         return new AppSettings
@@ -41,7 +58,8 @@ public sealed class AppSettings
             Language = Language,
             HiddenMcpIds = [.. HiddenMcpIds],
             UsedMcpIds = [.. UsedMcpIds],
-            KompasInstallDir = KompasInstallDir
+            KompasInstallDir = KompasInstallDir,
+            MatlabInstallDir = MatlabInstallDir
         };
     }
 }

@@ -14,7 +14,10 @@ public enum McpExtra
     OfficeExcel,
     OfficeWord,
     OfficePpt,
-    Ufp
+    Ufp,
+    Matlab,
+    Mathcad,
+    Mermaid
 }
 
 public sealed record McpDef(
@@ -78,7 +81,7 @@ public static class McpCatalog
         new("supabase", "Supabase", "McpSupabaseHint", "https://github.com/supabase-community/supabase-mcp", "@supabase/mcp-server-supabase", GuideKey: "GuideGeneric", TokenUrl: "https://supabase.com/dashboard/account/tokens", TokenEnvKey: "SUPABASE_ACCESS_TOKEN"),
         new("browserbase", "Browserbase", "McpBrowserbaseHint", "https://github.com/browserbase/mcp-server-browserbase", "@browserbasehq/mcp", GuideKey: "GuideGeneric", TokenUrl: "https://www.browserbase.com/", TokenEnvKey: "BROWSERBASE_API_KEY"),
         new("jina", "Jina", "McpJinaHint", "https://github.com/jina-ai/mcp", "jina-mcp-tools", GuideKey: "GuideGeneric", TokenUrl: "https://jina.ai/api-dashboard/", TokenEnvKey: "JINA_API_KEY"),
-        new("mermaid", "Mermaid", "McpMermaidHint", "https://github.com/hustcc/mcp-mermaid", "mcp-mermaid"),
+        new("mermaid", "Mermaid", "McpMermaidHint", "https://github.com/hustcc/mcp-mermaid", "mcp-mermaid", McpExtra.Mermaid),
         new("hackernews", "Hacker News", "McpHnHint", "https://github.com/pskill9/hn-server", "hn-server"),
         new("qdrant", "Qdrant", "McpQdrantHint", "https://github.com/qdrant/mcp-server-qdrant", "mcp-server-qdrant"),
         new("elasticsearch", "Elasticsearch", "McpEsHint", "https://github.com/elastic/mcp-server-elasticsearch", "@elastic/mcp-server-elasticsearch", GuideKey: "GuideElasticsearch", TokenUrl: "https://www.elastic.co/docs/deploy-manage/api-keys", TokenEnvKey: "ES_URL", TokenEnvKey2: "ES_API_KEY"),
@@ -88,7 +91,9 @@ public static class McpCatalog
         new("office-excel", "Excel", "McpExcelHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeExcel, GuideKey: "GuideOffice"),
         new("office-word", "Word", "McpWordHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficeWord, GuideKey: "GuideOffice"),
         new("office-ppt", "PowerPoint", "McpPptHint", "https://github.com/dosev-ai/mcp-office", "mcp-office", McpExtra.OfficePpt, GuideKey: "GuideOffice"),
-        new("ufp", "UFP", "McpUfpHint", "https://agenticfabricationnetwork.ai/", "", McpExtra.Ufp, GuideKey: "GuideUfp", RemoteUrl: UfpProxy.Url)
+        new("ufp", "UFP", "McpUfpHint", "https://agenticfabricationnetwork.ai/", "", McpExtra.Ufp, GuideKey: "GuideUfp", RemoteUrl: UfpProxy.Url),
+        new("matlab", "MATLAB", "McpMatlabHint", "https://github.com/matlab/matlab-mcp-server", "", McpExtra.Matlab, GuideKey: "GuideMatlab"),
+        new("mathcad", "Mathcad", "McpMathcadHint", "https://github.com/fqfqfqff/mathcad-prime-mcp", "", McpExtra.Mathcad, GuideKey: "GuideMathcad")
     ];
 
     public static JsonObject CreateNode(string id, AppSettings settings, string? secret = null)
@@ -130,6 +135,15 @@ public static class McpCatalog
 
         if (def.Extra == McpExtra.Ufp)
             return UfpProxy.Node();
+
+        if (def.Extra == McpExtra.Matlab)
+            return MatlabNode(settings);
+
+        if (def.Extra == McpExtra.Mathcad)
+            return MathcadNode();
+
+        if (def.Extra == McpExtra.Mermaid)
+            return MermaidNode();
 
         if (def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt)
             return OfficeNode(def.Extra, env);
@@ -207,13 +221,178 @@ public static class McpCatalog
     }
 
     public static bool NeedsNpx(McpDef def) =>
-        def.Extra is not (McpExtra.Kompas or McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt or McpExtra.Ufp)
+        def.Extra is not (McpExtra.Kompas or McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt or McpExtra.Ufp or McpExtra.Matlab or McpExtra.Mathcad or McpExtra.Mermaid)
         && (def.Package.Length > 0 || def.Extra == McpExtra.Telegram);
 
     public static bool NeedsPython(McpDef def) =>
         def.Extra is McpExtra.OfficeExcel or McpExtra.OfficeWord or McpExtra.OfficePpt;
 
     public static bool NeedsKompasBin(McpDef def) => def.Extra == McpExtra.Kompas;
+
+    public static bool NeedsMatlabBin(McpDef def) => def.Extra == McpExtra.Matlab;
+
+    public static bool NeedsMathcadMcp(McpDef def) => def.Extra == McpExtra.Mathcad;
+
+    public static bool NeedsMermaid(McpDef def) => def.Extra == McpExtra.Mermaid;
+
+    public static string MermaidDir() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        Constants.SettingsFolderName,
+        "mermaid");
+
+    public static string MermaidEntry() => Path.Combine(MermaidDir(), "node_modules", "mcp-mermaid", "build", "index.js");
+
+    public static string MathcadDir() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        Constants.SettingsFolderName,
+        "mathcad-prime");
+
+    public static string MathcadPython() => Path.Combine(MathcadDir(), "venv", "Scripts", "python.exe");
+
+    public static string MathcadSrc()
+    {
+        var fallback = Path.Combine(MathcadDir(), "src");
+        if (!Directory.Exists(MathcadDir()))
+            return fallback;
+        try
+        {
+            var server = Directory.EnumerateFiles(MathcadDir(), "server.py", SearchOption.AllDirectories)
+                .FirstOrDefault(p => p.Contains($"{Path.DirectorySeparatorChar}mathcad_prime_mcp{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase));
+            var src = server == null ? null : Directory.GetParent(server)?.Parent?.FullName;
+            return string.IsNullOrWhiteSpace(src) ? fallback : src;
+        }
+        catch (IOException)
+        {
+            return fallback;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return fallback;
+        }
+    }
+
+    public static string MatlabDir() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        Constants.SettingsFolderName,
+        "matlab");
+
+    public static string MatlabExePath() => Path.Combine(MatlabDir(), "matlab-mcp-server.exe");
+
+    public static string MatlabSetupStampPath() => Path.Combine(MatlabDir(), "setup.ok");
+
+    public static IReadOnlyList<string> MatlabSetupArgs(string root) =>
+    [
+        "--setup-matlab",
+        "--disable-telemetry=true",
+        "--matlab-display-mode=desktop",
+        "--matlab-root=" + root
+    ];
+
+    public static bool IsMatlabMcpToolboxInstalled()
+    {
+        foreach (var root in MatlabAddonRoots())
+        {
+            if (ContainsShareSession(root))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> MatlabAddonRoots()
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        yield return Path.Combine(appData, "MathWorks", "MATLAB Add-Ons");
+        yield return Path.Combine(docs, "MATLAB", "Add-Ons");
+        yield return Path.Combine(docs, "MATLAB Add-Ons");
+    }
+
+    private static bool ContainsShareSession(string root)
+    {
+        if (!Directory.Exists(root))
+            return false;
+        try
+        {
+            return Directory.EnumerateFiles(root, "shareMATLABSession.m", SearchOption.AllDirectories).Any();
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    public static string? FindMatlabInstall(string? preferred)
+    {
+        if (!string.IsNullOrWhiteSpace(preferred))
+        {
+            var exact = ResolveMatlabRoot(preferred);
+            if (exact != null)
+                return exact;
+        }
+
+        return ResolveMatlabRoot(null);
+    }
+
+    public static string? ResolveMatlabRoot(string? folder)
+    {
+        if (IsMatlabRoot(folder))
+            return folder;
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            var parent = Directory.GetParent(folder)?.FullName;
+            if (IsMatlabRoot(parent))
+                return parent;
+            return null;
+        }
+
+        var bases = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "MATLAB"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "MATLAB")
+        };
+        return bases
+            .Where(Directory.Exists)
+            .SelectMany(Directory.GetDirectories)
+            .Where(IsMatlabRoot)
+            .OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+    }
+
+    private static bool IsMatlabRoot(string? folder) =>
+        !string.IsNullOrWhiteSpace(folder) && File.Exists(Path.Combine(folder, "bin", "matlab.exe"));
+
+    private static JsonObject MatlabNode(AppSettings settings)
+    {
+        var root = FindMatlabInstall(settings.MatlabInstallDir);
+        var cmd = new List<string>
+        {
+            MatlabExePath(),
+            "--disable-telemetry=true",
+            "--matlab-display-mode=desktop",
+            "--initial-working-folder=" + FilesystemRoot()
+        };
+        if (root != null)
+            cmd.Add("--matlab-root=" + root);
+        return Local(cmd, null);
+    }
+
+    private static JsonObject MathcadNode()
+    {
+        var env = new JsonObject
+        {
+            ["PYTHONPATH"] = MathcadSrc(),
+            ["PYTHONIOENCODING"] = "utf-8",
+            ["PYTHONUNBUFFERED"] = "1"
+        };
+        return Local([MathcadPython(), "-m", "mathcad_prime_mcp.server"], env);
+    }
+
+    private static JsonObject MermaidNode() => Local([NodeExe(), MermaidEntry()], null);
 
     private static JsonObject OfficeNode(McpExtra extra, JsonObject? env)
     {

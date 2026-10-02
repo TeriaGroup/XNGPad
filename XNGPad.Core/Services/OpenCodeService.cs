@@ -150,6 +150,7 @@ public sealed class OpenCodeService
         changed |= RepairUfpNode(mcp);
         changed |= RepairKompasNode(mcp);
         changed |= RepairElasticsearchNode(mcp);
+        changed |= RepairMermaidNode(mcp);
         if (!changed)
             return false;
         WriteBackup(path);
@@ -171,6 +172,8 @@ public sealed class OpenCodeService
             if (node["enabled"] is JsonValue en && en.TryGetValue<bool>(out var on) && !on)
                 continue;
             if (node["command"] is not JsonArray cmd || cmd.Count == 0)
+                continue;
+            if (SkipProbe(entry.Key, cmd))
                 continue;
             targets.Add((entry.Key, node));
         }
@@ -211,6 +214,7 @@ public sealed class OpenCodeService
             proc = Process.Start(BuildProbe(node));
             if (proc == null)
                 return ProbeKind.Dead;
+            _ = proc.StandardError.ReadToEndAsync();
             proc.StandardInput.WriteLine("""{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"xngpad","version":"1.2.0"}}}""");
             proc.StandardInput.Flush();
             var deadline = Environment.TickCount64 + timeoutMs;
@@ -342,15 +346,23 @@ public sealed class OpenCodeService
         return true;
     }
 
+    private static bool SkipProbe(string id, JsonArray cmd)
+    {
+        if (id is "matlab" or "mathcad" or "kompas-3d")
+            return true;
+        var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
+        return text.Contains("matlab-mcp-server", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("mathcad_prime_mcp", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("kompas-mcp", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool RepairHuggingFaceNode(JsonObject mcp)
     {
         if (mcp["huggingface"] is not JsonObject node)
             return false;
-        if (node["type"]?.GetValue<string>() == "remote" && (node["url"]?.GetValue<string>() ?? "").Contains("hf.co/mcp", StringComparison.OrdinalIgnoreCase))
+        if (IsHuggingFaceReady(node))
             return false;
-        string? token = null;
-        if (node["environment"] is JsonObject env && env["HF_TOKEN"] is JsonValue tok)
-            token = tok.GetValue<string>();
+        var token = ReadHfToken(node);
         var remote = new JsonObject
         {
             ["type"] = "remote",
@@ -362,6 +374,52 @@ public sealed class OpenCodeService
             remote["headers"] = new JsonObject { ["Authorization"] = "Bearer " + token };
         mcp["huggingface"] = remote;
         return true;
+    }
+
+    private static bool IsHuggingFaceReady(JsonObject node)
+    {
+        var url = node["url"]?.GetValue<string>() ?? "";
+        if (string.Equals(node["type"]?.GetValue<string>(), "remote", StringComparison.OrdinalIgnoreCase)
+            && url.Contains("hf.co/mcp", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (!UfpProxy.IsProxied(node) || node["environment"] is not JsonObject env)
+            return false;
+        var remote = env["MCP_REMOTE_URL"]?.GetValue<string>() ?? env["UFP_MCP_URL"]?.GetValue<string>() ?? "";
+        return remote.Contains("hf.co/mcp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ReadHfToken(JsonObject node)
+    {
+        if (node["environment"] is JsonObject env)
+        {
+            if (env["HF_TOKEN"] is JsonValue tok && !string.IsNullOrWhiteSpace(tok.GetValue<string>()))
+                return tok.GetValue<string>();
+            if (env["MCP_REMOTE_HEADERS"] is JsonValue headers)
+                return Bearer(headers.GetValue<string>());
+        }
+
+        if (node["headers"] is JsonObject raw && raw["Authorization"] is JsonValue auth)
+            return Bearer(auth.GetValue<string>());
+        return null;
+    }
+
+    private static string? Bearer(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        const string prefix = "Bearer ";
+        if (value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return value[prefix.Length..].Trim().Trim('"');
+        try
+        {
+            if (JsonNode.Parse(value) is JsonObject obj && obj["Authorization"] is JsonValue auth)
+                return Bearer(auth.GetValue<string>());
+        }
+        catch (System.Text.Json.JsonException)
+        {
+        }
+
+        return null;
     }
 
     private static bool DisableDeadRemote(JsonObject mcp, string id)
@@ -475,11 +533,30 @@ public sealed class OpenCodeService
         return true;
     }
 
+    private static bool RepairMermaidNode(JsonObject mcp)
+    {
+        if (mcp["mermaid"] is not JsonObject node)
+            return false;
+        var entry = McpCatalog.MermaidEntry();
+        if (!File.Exists(entry))
+            return false;
+        var text = node["command"] is JsonArray cmd
+            ? string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""))
+            : "";
+        if (text.Contains(entry, StringComparison.OrdinalIgnoreCase) && !text.Contains("npx", StringComparison.OrdinalIgnoreCase))
+            return false;
+        node["type"] = "local";
+        node["command"] = new JsonArray(NodeExe(), entry);
+        node["enabled"] = true;
+        node["timeout"] = 120000;
+        return true;
+    }
+
     private static bool RepairKompasNode(JsonObject mcp)
     {
-        KompasConfig.EnsureProxy();
         if (mcp["kompas-3d"] is not JsonObject node || node["command"] is not JsonArray cmd)
             return false;
+        KompasConfig.EnsureProxy();
         var text = string.Join(' ', cmd.Select(x => x?.GetValue<string>() ?? ""));
         if (text.Contains("schema-proxy.mjs", StringComparison.OrdinalIgnoreCase))
             return false;
