@@ -5,7 +5,7 @@ namespace XNGPad.Core.Services;
 public static class TelegramLaunch
 {
     public static string ScriptPath() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        AppPaths.Current.ApplicationData,
         Constants.SettingsFolderName,
         "telegram",
         "launch.mjs");
@@ -31,7 +31,7 @@ public static class TelegramLaunch
     {
         try
         {
-            var hosts = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "drivers", "etc", "hosts");
+            var hosts = AppPaths.Current.HostsFile;
             var text = File.Exists(hosts) ? File.ReadAllText(hosts) : "";
             if (text.Contains("my.telegram.org", StringComparison.OrdinalIgnoreCase))
                 return;

@@ -26,9 +26,9 @@ public sealed class NodeService
     {
         var extra = new[]
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "nodejs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "nodejs")
+            Path.Combine(AppPaths.Current.ProgramFiles, "nodejs"),
+            Path.Combine(AppPaths.Current.ProgramFilesX86, "nodejs"),
+            Path.Combine(AppPaths.Current.LocalApplicationData, "Programs", "nodejs")
         };
 
         var path = Environment.GetEnvironmentVariable("PATH") ?? "";

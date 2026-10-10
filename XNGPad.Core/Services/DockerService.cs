@@ -279,7 +279,7 @@ public sealed class DockerService
     private static IEnumerable<string> DockerCandidates()
     {
         yield return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            AppPaths.Current.ProgramFiles,
             "Docker", "Docker", "resources", "bin", "docker.exe");
         var path = Environment.GetEnvironmentVariable("PATH") ?? "";
         foreach (var dir in path.Split(Path.PathSeparator))
@@ -294,10 +294,10 @@ public sealed class DockerService
     private static IEnumerable<string> DesktopCandidates()
     {
         yield return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            AppPaths.Current.ProgramFiles,
             "Docker", "Docker", "Docker Desktop.exe");
         yield return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            AppPaths.Current.ProgramFilesX86,
             "Docker", "Docker", "Docker Desktop.exe");
     }
 }

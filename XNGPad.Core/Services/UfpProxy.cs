@@ -8,7 +8,7 @@ public static class UfpProxy
     public const string Url = "https://agenticfabricationnetwork.ai/mcp";
 
     public static string Dir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        AppPaths.Current.ApplicationData,
         Constants.SettingsFolderName,
         "ufp");
 
@@ -54,7 +54,7 @@ public static class UfpProxy
 
     private static string NodeExe()
     {
-        var candidate = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe");
+        var candidate = Path.Combine(AppPaths.Current.ProgramFiles, "nodejs", "node.exe");
         return File.Exists(candidate) ? candidate : "node";
     }
 
