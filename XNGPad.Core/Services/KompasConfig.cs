@@ -13,7 +13,7 @@ public static class KompasConfig
         ".kompasmcp",
         "config.json");
 
-    public static bool Exists => File.Exists(FilePath);
+    public static bool Exists => File.Exists(ConfigFilePath);
 
     public static void EnsureProxy()
     {
@@ -156,10 +156,10 @@ public static class KompasConfig
 
     public static void Write(string json)
     {
-        var dir = Path.GetDirectoryName(FilePath);
+        var dir = Path.GetDirectoryName(ConfigFilePath);
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
-        File.WriteAllText(FilePath, json.Trim() + Environment.NewLine, new UTF8Encoding(false));
+        File.WriteAllText(ConfigFilePath, json.Trim() + Environment.NewLine, new UTF8Encoding(false));
     }
 
     public static bool LooksLikeConfig(string json)
@@ -210,4 +210,10 @@ public static class KompasConfig
 
         return null;
     }
+
+    /// <summary>
+    /// %USERPROFILE%\.kompasmcp\config.json, resolved on each call through <see cref="AppPaths"/> so tests can redirect it.
+    /// <see cref="FilePath"/> keeps the value captured at type load for existing callers.
+    /// </summary>
+    public static string ConfigFilePath => Path.Combine(AppPaths.Current.UserProfile, ".kompasmcp", "config.json");
 }

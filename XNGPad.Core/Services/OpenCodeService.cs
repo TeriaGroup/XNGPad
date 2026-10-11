@@ -19,7 +19,7 @@ public sealed class OpenCodeService
 
     public static string DefaultConfigPath =>
         Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            AppPaths.Current.UserProfile,
             ".config",
             "opencode",
             "opencode.json");
@@ -576,7 +576,7 @@ public sealed class OpenCodeService
 
     private static string NodeExe()
     {
-        var candidate = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe");
+        var candidate = Path.Combine(AppPaths.Current.ProgramFiles, "nodejs", "node.exe");
         return File.Exists(candidate) ? candidate : "node";
     }
 

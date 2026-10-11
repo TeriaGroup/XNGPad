@@ -17,7 +17,7 @@ public sealed class SettingsService
     public SettingsService(string? filePath = null)
     {
         FilePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppPaths.Current.ApplicationData,
             Constants.SettingsFolderName,
             "settings.json");
     }

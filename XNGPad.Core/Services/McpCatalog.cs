@@ -207,14 +207,14 @@ public static class McpCatalog
 
     private static string NodeExe()
     {
-        var candidate = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs", "node.exe");
+        var candidate = Path.Combine(AppPaths.Current.ProgramFiles, "nodejs", "node.exe");
         return File.Exists(candidate) ? candidate : "node";
     }
 
     public static string KompasExePath()
     {
         return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppPaths.Current.ApplicationData,
             Constants.SettingsFolderName,
             "kompas-mcp",
             "kompas-mcp.exe");
@@ -236,14 +236,14 @@ public static class McpCatalog
     public static bool NeedsMermaid(McpDef def) => def.Extra == McpExtra.Mermaid;
 
     public static string MermaidDir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        AppPaths.Current.ApplicationData,
         Constants.SettingsFolderName,
         "mermaid");
 
     public static string MermaidEntry() => Path.Combine(MermaidDir(), "node_modules", "mcp-mermaid", "build", "index.js");
 
     public static string MathcadDir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        AppPaths.Current.ApplicationData,
         Constants.SettingsFolderName,
         "mathcad-prime");
 
@@ -272,7 +272,7 @@ public static class McpCatalog
     }
 
     public static string MatlabDir() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        AppPaths.Current.ApplicationData,
         Constants.SettingsFolderName,
         "matlab");
 
@@ -301,8 +301,8 @@ public static class McpCatalog
 
     private static IEnumerable<string> MatlabAddonRoots()
     {
-        var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var appData = AppPaths.Current.ApplicationData;
+        var docs = AppPaths.Current.MyDocuments;
         yield return Path.Combine(appData, "MathWorks", "MATLAB Add-Ons");
         yield return Path.Combine(docs, "MATLAB", "Add-Ons");
         yield return Path.Combine(docs, "MATLAB Add-Ons");
@@ -352,8 +352,8 @@ public static class McpCatalog
 
         var bases = new[]
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "MATLAB"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "MATLAB")
+            Path.Combine(AppPaths.Current.ProgramFiles, "MATLAB"),
+            Path.Combine(AppPaths.Current.ProgramFilesX86, "MATLAB")
         };
         return bases
             .Where(Directory.Exists)
@@ -465,17 +465,17 @@ public static class McpCatalog
 
     private static string FilesystemRoot()
     {
-        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        var desktop = AppPaths.Current.Desktop;
         var projects = Path.Combine(desktop, "projects");
         return Directory.Exists(projects)
             ? projects
-            : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            : AppPaths.Current.UserProfile;
     }
 
     private static string SqlitePath()
     {
         var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppPaths.Current.ApplicationData,
             Constants.SettingsFolderName);
         Directory.CreateDirectory(dir);
         return Path.Combine(dir, "mcp.sqlite");

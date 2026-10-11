@@ -207,7 +207,7 @@ public sealed class InstallService
     public static string MermaidHeadlessDir() => PlaywrightBrowserDir("chromium_headless_shell-1243");
 
     private static string PlaywrightBrowserDir(string name) => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        AppPaths.Current.LocalApplicationData,
         "ms-playwright",
         name);
 
@@ -438,8 +438,8 @@ public sealed class InstallService
 
     private static IEnumerable<string> PythonDirs()
     {
-        var local = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python");
-        var pf = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Python");
+        var local = Path.Combine(AppPaths.Current.LocalApplicationData, "Programs", "Python");
+        var pf = Path.Combine(AppPaths.Current.ProgramFiles, "Python");
         foreach (var root in new[] { local, pf })
         {
             if (!Directory.Exists(root))
@@ -466,8 +466,8 @@ public sealed class InstallService
     {
         var candidates = new[]
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "WindowsApps", "winget.exe"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps", "winget.exe")
+            Path.Combine(AppPaths.Current.LocalApplicationData, "Microsoft", "WindowsApps", "winget.exe"),
+            Path.Combine(AppPaths.Current.ProgramFiles, "WindowsApps", "winget.exe")
         };
         foreach (var p in candidates.Concat(OnPath("winget.exe")))
         {
@@ -528,7 +528,7 @@ public sealed class InstallService
     private static IEnumerable<string> OpenCodeDirs()
     {
         var localPrograms = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            AppPaths.Current.LocalApplicationData,
             "Programs");
         var dirs = new List<string>
         {
@@ -628,10 +628,10 @@ public sealed class InstallService
     {
         var extra = new[]
         {
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "nodejs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "nodejs"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "nodejs")
+            Path.Combine(AppPaths.Current.ProgramFiles, "nodejs"),
+            Path.Combine(AppPaths.Current.ProgramFilesX86, "nodejs"),
+            Path.Combine(AppPaths.Current.ApplicationData, "npm"),
+            Path.Combine(AppPaths.Current.LocalApplicationData, "Programs", "nodejs")
         };
         foreach (var dir in extra.Concat(PathDirs()))
         {
